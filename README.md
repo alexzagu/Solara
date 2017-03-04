@@ -1,0 +1,2 @@
+# Solara
+El lenguaje de programación “Solara” a desarrollar tiene como objetivo principal servir como una herramienta de aprendizaje para estudiantes jóvenes de primaria o secundaria, permitiéndoles aprender algunos fundamentos de programación de una forma divertida y entretenida, usando elementos gráficos como líneas, círculos, curvas, entre otras cosas. Con Solara, los jóvenes podrán escribir comandos en código y ejecutarlos para que un elemento en pantalla siga gráficamente los comandos que fueron escritos y vaya dejando un rastro en pantalla mientras se desplaza.
