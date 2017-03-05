@@ -313,6 +313,11 @@ def p_y(p):
 #----------------------------------------------------------------
 
 # funcion para manejar errores
+def p_empty(p):
+  'empty :'
+  pass
+
+# funcion para manejar errores
 def p_error(p):
   print("Error de sintaxis!")
 
