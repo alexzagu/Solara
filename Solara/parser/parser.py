@@ -31,7 +31,7 @@ def p_a(p):
 
 def p_b(p):
   '''
-    b: EQUALS C | 'nose como poner el vacio'
+    b: EQUALS C | empty
   '''
 
 def p_c(p):
@@ -41,12 +41,12 @@ def p_c(p):
 
 def p_d(p):
   '''
-    d: COMMA A | 'nose como poner el vacio'
+    d: COMMA A | empty
   '''
 
 def p_e(p):
   '''
-    e: DECLARATIONS | 'nose como poner el vacio'
+    e: DECLARATIONS | empty
   '''
 
 #----------------------------------------------------------------
@@ -58,7 +58,7 @@ def p_s_block(p):
 
 def p_f(p):
   '''
-    f: S_STATUTE F | 'nose como poner el vacio'
+    f: S_STATUTE F | empty
   '''
 
 #----------------------------------------------------------------
@@ -105,7 +105,7 @@ def p_expression(p):
 
 def p_g(p):
   '''
-    g: H EXP | 'nose como poner el vacio'
+    g: H EXP | empty
   '''
 
 def p_h(p):
@@ -122,7 +122,7 @@ def p_exp(p):
 
 def p_i(p):
   '''
-    i: J EXP | 'nose como poner el vacio'
+    i: J EXP | empty
   '''
 
 def p_j(p):
@@ -139,7 +139,7 @@ def p_term(p):
 
 def p_k(p):
   '''
-    k: L TERM | 'vacio'
+    k: L TERM | empty
   '''
 
 def p_l(p):
@@ -156,7 +156,7 @@ def p_factor(p):
 
 def p_m(p):
   '''
-    m: PLUS | MINUS | 'vacio'
+    m: PLUS | MINUS | empty
   '''
 
 #----------------------------------------------------------------
@@ -187,7 +187,7 @@ def p_id_ref(p):
 
 def p_o(p):
   '''
-    o: L_BRACK EXPRESSION R_BRACK | 'vacio'
+    o: L_BRACK EXPRESSION R_BRACK | empty
   '''
 
 #----------------------------------------------------------------
@@ -199,7 +199,7 @@ def p_list_exp(p):
 
 def p_p(p):
   '''
-    p: COMMA EXPRESSION P | 'vacio'
+    p: COMMA EXPRESSION P | empty
   '''
 
 #----------------------------------------------------------------
@@ -218,7 +218,7 @@ def p_block(p):
 
 def p_q(p):
   '''
-    q: STATUTE Q | 'vacio'
+    q: STATUTE Q | empty
   '''
 
 #----------------------------------------------------------------
@@ -268,7 +268,7 @@ def p_s(p):
 
 def p_u(p):
   '''
-    u: S | 'vacio'
+    u: S | empty
   '''
 
 def p_t(p):
@@ -295,7 +295,7 @@ def p_w(p):
 
 def p_x(p):
   '''
-    x: COMMA V | 'vacio'
+    x: COMMA V | empty
   '''
 
 #----------------------------------------------------------------
@@ -307,7 +307,7 @@ def p_params(p):
 
 def p_y(p):
   '''
-    y: COMMA PARAMS | 'vacio'
+    y: COMMA PARAMS | empty
   '''
 
 #----------------------------------------------------------------
