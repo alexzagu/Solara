@@ -6,6 +6,9 @@
 #  05/03/17
 # ------------------------------------------------------------
 import ply.lex as lex
+#-------------------------------------------------------------
+
+# List of tokens.
 
 tokens = (
     'IF',
@@ -41,7 +44,6 @@ tokens = (
     'NOT',
     'AND',
     'OR',
-    'SIMPLE_Q',
     'ID',
     'INT_CONT',
     'STRING_CONT',
@@ -85,20 +87,20 @@ tokens = (
     'PRINT'
 )
 
-#expresiones regulares
+# Regular Expressions.
 
 t_INT               = r'[0-9]+'
 t_FLOAT             = r'[0-9]+\.[0-9]+((E|e)(+|-)?[0-9]+)?'
-t_STRING            = r' \’(\’\’|[^\’eo|]*\’'
+t_STRING            = r'\'(\'\'|[^\'eol])*\''
 t_BOOL              = r'true|false'
-t_CHAR              = r''
+t_CHAR              = r'\'[a-zA-Z0-9]\''
 t_AND               = r'and|&&'
-t_IS                = r'is|\=='
+t_IS                = r'is|\=\='
 t_NOT               = r'not|\!'
-t_OR                = r'or|\||'
+t_OR                = r'or|\|\|'
 t_AT                = r'\@'
-t_LAT               = r'\@*'
-t_RAT               = r'\*@'
+t_LAT               = r'\@\*'
+t_RAT               = r'\*\@'
 t_L_BRACE           = r'\{'
 t_R_BRACE           = r'\}'
 t_L_PAREN           = r'\('
@@ -113,11 +115,10 @@ t_MULTIPLY          = r'\*'
 t_DIVIDE            = r'\/'
 t_GREATER_T         = r'>'
 t_LESS_T            = r'\<'
-t_GREATER_T_EQUALS  = r'\>='
-t_LESS_T_EQUALS     = r'\<='
+t_GREATER_T_EQUALS  = r'\>\='
+t_LESS_T_EQUALS     = r'\<\='
 t_EQUALS            = r'\='
 t_PERCENTAGE        = r'\% | mod'
-t_SIMPLE_Q          = r'\''
 
 
 reserved = {
@@ -138,7 +139,15 @@ reserved = {
     'and'       :'AND',
     'not'       :'NOT',
     'or'        :'OR',
-    'is'        :'IS'
+    'is'        :'IS',
+    'mod'       :'PERCENTAGE',
+    'drawCircle':'DRAW_CIRCLE',
+    'drawLine'  :'DRAW_LINE',
+    'drawRectangle':'DRAW_RECTANGLE',
+    'moveUp'    :'MOVE_UP',
+    'moveDown'  :'MOVE_DOWN',
+    'moveRight' :'MOVE_RIGHT',
+    'moveLeft'  :'MOVE_LEFT'
 }
 
 t_ignore            = ' \t\r'
@@ -148,7 +157,7 @@ def t_newline(t):
     t.lexer.lineno += len(t.value)
 
 def t_ID(t):
-    r'[a-z](_?[a-zA-Z0-9])*'
+    r'[a-zA-Z](_?[a-zA-Z0-9])*'
     t.type = reserved.get(t.value,'ID')
     return t
 
@@ -158,10 +167,8 @@ def t_error(t):
 
 lexer = lex.lex()
 
-data = '''
-nombre int if else program print int float 5, 5.4
-< > <> () "hola muundo" * / = : + - ,{ } , ; ?
-'''
+with open('../testing/success_test.txt', 'r') as myfile:
+    data = myfile.read()
 
 lexer.input(data)
 
