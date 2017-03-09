@@ -1,0 +1,39 @@
+program Success:
+
+VARS:
+    int A, B = 5, C~
+    float D = 5.5, E~
+    string F = 'Hola', G~
+    bool H = true~
+    list I = [5, 6, 'adios', 5.5, 5+5, 10 is 10]~
+CORE:
+{
+    sol void functionA(int A, int B, float C):
+    {
+        A = (A + B) mod C
+    }~
+
+    if 5 > 4:
+    {
+        A = B + C~
+    }
+    elif 5 < 4:
+    {
+        C = A - B~
+    }
+    else
+    {
+        B = C * A~
+    }~
+
+    for A = 5~ A > B~ A = 5 + 5:
+    {
+        B = B + 1~
+    }~
+
+    while A is B and B is C:
+    {
+        C = C mod A~
+        I[5] = 5~
+    }~
+}
