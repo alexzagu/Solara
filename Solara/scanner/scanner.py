@@ -14,14 +14,15 @@ tokens = (
     'IF',
     'ELSE',
     'ELIF',
-    'WHILE',
-    'FOR',
+    'WHILE_CYCLE',
+    'FOR_CYCLE',
     'INT',
     'FLOAT',
     'CHAR',
     'STRING',
     'BOOL',
     'LIST',
+    'VOID',
     'L_BRACE',
     'R_BRACE',
     'L_PAREN',
@@ -49,34 +50,11 @@ tokens = (
     'STRING_CONT',
     'CHAR_CONT',
     'FLOAT_CONT',
-    'BOOL_CONT'
+    'BOOL_CONT',
     'TICK',
-    'AT',
-    'LAT',
-    'RAT',
-    'EXP',
-    'TERM',
-    'CON_VAR',
-    'S_TYPE',
-    'NEGATION',
-    'FACTOR',
-    'ID_REF',
-    'LIST_EXP',
-    'EXPRESSION',
-    'ASSIGNATION',
-    'DECLARATION',
-    'TYPE',
-    'BLOCK',
-    'ASSIGNATION_ESP',
-    'S_BLOCK',
-    'CONDITION',
-    'CYCLE',
-    'SOLUTION_DEF',
-    'SOLUTION_CALL',
-    'PARAM',
+    'SINGLE_COMMENT',
+    'MULTI_COMMENT',
     'PROGRAM',
-    'STATUTE',
-    'S_STATUTE',
     'DRAW_CIRCLE',
     'DRAW_LINE',
     'DRAW_RECTANGLE',
@@ -84,49 +62,53 @@ tokens = (
     'MOVE_DOWN',
     'MOVE_RIGHT',
     'MOVE_LEFT',
-    'PRINT'
+    'PRINT',
+    'CORE',
+    'VARS',
+    'SOL'
 )
 
 # Regular Expressions.
 
-t_INT               = r'[0-9]+'
-t_FLOAT             = r'[0-9]+\.[0-9]+((E|e)(+|-)?[0-9]+)?'
-t_STRING            = r'\'(\'\'|[^\'eol])*\''
-t_BOOL              = r'true|false'
-t_CHAR              = r'\'[a-zA-Z0-9]\''
-t_AND               = r'and|&&'
-t_IS                = r'is|\=\='
-t_NOT               = r'not|\!'
-t_OR                = r'or|\|\|'
-t_AT                = r'\@'
-t_LAT               = r'\@\*'
-t_RAT               = r'\*\@'
-t_L_BRACE           = r'\{'
-t_R_BRACE           = r'\}'
-t_L_PAREN           = r'\('
-t_R_PAREN           = r'\)'
-t_L_BRACK           = r'\['
-t_R_BRACK           = r'\]'
-t_COLON             = r'\:'
-t_COMMA             = r'\,'
-t_PLUS              = r'\+'
-t_MINUS             = r'\-'
-t_MULTIPLY          = r'\*'
-t_DIVIDE            = r'\/'
-t_GREATER_T         = r'>'
-t_LESS_T            = r'\<'
-t_GREATER_T_EQUALS  = r'\>\='
-t_LESS_T_EQUALS     = r'\<\='
-t_EQUALS            = r'\='
-t_PERCENTAGE        = r'\% | mod'
+t_INT_CONT              = r'[0-9]+'
+t_FLOAT_CONT            = r'[0-9]+.[0-9]+'
+t_STRING_CONT           = r'\"(\\.|[^"])*\"'
+t_BOOL_CONT             = r'true|false'
+t_CHAR_CONT             = r'\'[a-zA-Z0-9]\''
+t_AND                   = r'and|&&'
+t_IS                    = r'is|\=\='
+t_NOT                   = r'not|\!'
+t_OR                    = r'or|\|\|'
+t_ignore_SINGLE_COMMENT = r'\@.*'
+t_ignore_MULTI_COMMENT  = r'\@\*'
+t_L_BRACE               = r'\{'
+t_R_BRACE               = r'\}'
+t_L_PAREN               = r'\('
+t_R_PAREN               = r'\)'
+t_L_BRACK               = r'\['
+t_R_BRACK               = r'\]'
+t_COLON                 = r'\:'
+t_COMMA                 = r'\,'
+t_PLUS                  = r'\+'
+t_MINUS                 = r'\-'
+t_MULTIPLY              = r'\*'
+t_DIVIDE                = r'\/'
+t_GREATER_T             = r'>'
+t_LESS_T                = r'\<'
+t_GREATER_T_EQUALS      = r'\>\='
+t_LESS_T_EQUALS         = r'\<\='
+t_EQUALS                = r'\='
+t_PERCENTAGE            = r'\% | mod'
+t_TICK                  = r'\~'
 
+# Reserved words.
 
 reserved = {
     'if'        :'IF',
     'else'      :'ELSE',
     'elif'      :'ELIF',
-    'while'     :'WHILE',
-    'for'       :'FOR',
+    'while'     :'WHILE_CYCLE',
+    'for'       :'FOR_CYCLE',
     'program'   :'PROGRAM',
     'print'     :'PRINT',
     'int'       :'INT',
@@ -134,7 +116,10 @@ reserved = {
     'string'    :'STRING',
     'char'      :'CHAR',
     'bool'      :'BOOL',
-    'core'      :'CORE',
+    'list'      :'LIST',
+    'void'      :'VOID',
+    'CORE'      :'CORE',
+    'VARS'      :'VARS',
     'sol'       :'SOL',
     'and'       :'AND',
     'not'       :'NOT',
@@ -167,7 +152,10 @@ def t_error(t):
 
 lexer = lex.lex()
 
-with open('../testing/success_test.txt', 'r') as myfile:
+#with open('../testing/success_test.txt', 'r') as myfile:
+#    data = myfile.read()
+
+with open('../testing/failure_test.txt', 'r') as myfile:
     data = myfile.read()
 
 lexer.input(data)
@@ -176,3 +164,4 @@ while True:
     tok = lexer.token()
     if not tok:
         break
+    #print(tok)
