@@ -3,9 +3,9 @@ programa Success:
 VARS:
     int A, B = 5, C~
     float D = 5.5, E~
-    string F = 'Hola', G~
+    string F = "Hola", G~
     bool H = true~
-    list I = [5, 6, 'adios', 5.5, 5+5, 10 is 10]~
+    list I = [5, 6, "adios", 5.5, 5+5, 10 is 10]~
 CORE:
 {
     sol void functionA(int A, int B, float C):
