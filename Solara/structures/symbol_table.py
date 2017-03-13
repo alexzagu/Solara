@@ -12,13 +12,28 @@ class symbolTable:
 
     # Constructor
     def __init__(self):
+        '''
+        Instance variable symbolicDic
+        Dictionary that holds all variable information for a specific scope.
+        It follows the following format:
+        key: name value: [type, value]
+        '''
         print('Initializing symbol table....')
+        self.symbolDic = {}
 
-    # Class variable
-    # Dictionary that holds all variable information for a specific scope.
-    # It follows the following format:
-    # key: name value: [type, value]
-    symbolDic = {}
+    # stringTo methods
+
+    def __str__(self):
+        lines = []
+        for k, v in self.symbolDic.iteritems():
+            lines.append('key: ' + str(k) + ' value: ' + str(v))
+        return '\n'.join(lines)
+
+    def __unicode__(self):
+        lines = []
+        for k, v in self.symbolDic.iteritems():
+            lines.append('key: ' + str(k) + ' value: ' + str(v))
+        return '\n'.join(lines)
 
     # Method definitions
 

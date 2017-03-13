@@ -20,6 +20,20 @@ class functionDirectory:
     # key: name value: [type, (paramType1, paramType2, paramTypeN), symbolTable]
     functionDic = {}
 
+    # stringTo methods
+
+    def __str__(self):
+        lines = []
+        for k, v in self.functionDic.iteritems():
+            lines.append('key: ' + str(k) + ' value: ' + str(v))
+        return '\n'.join(lines)
+
+    def __unicode__(self):
+        lines = []
+        for k, v in self.functionDic.iteritems():
+            lines.append('key: ' + str(k) + ' value: ' + str(v))
+        return '\n'.join(lines)
+
     # Method definitions
 
     # Add method
@@ -32,3 +46,7 @@ class functionDirectory:
             return self.functionDic[name]
         else:
             return None
+
+    # Method to append a new parameter for a specific solution
+    def append_parameter(self, name, code):
+        self.functionDic[name][1] += (code, )
