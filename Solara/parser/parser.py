@@ -20,7 +20,7 @@ currentSol = None # Solution that's being processed at the moment
 
 def p_program(p):
     '''
-    program : PROGRAM ID create_global_fun COLON VARS COLON DECLARATIONS CORE COLON S_BLOCK
+    program : PROGRAM ID create_global_fun COLON VARS COLON VAR_DEFINITIONS SOLS COLON SOL_DEFINITIONS MAIN_DEFINITION
     '''
 
 def p_create_global_fun(p):
@@ -33,9 +33,10 @@ def p_create_global_fun(p):
 
 #-------------------------------------------------------------
 
-def p_declarations(p):
+def p_var_definitions(p):
     '''
-    DECLARATIONS : TYPE store_type A TICK E
+    VAR_DEFINITIONS : TYPE store_type A TICK VAR_DEFINITIONS
+    | empty
     '''
 
 def p_store_type(p):
@@ -103,11 +104,11 @@ def p_d(p):
     | empty
     '''
 
-def p_e(p):
-    '''
-    E : DECLARATIONS
-    | empty
-    '''
+# def p_e(p):
+#     '''
+#     E : VAR_DEFINITIONS
+#     | empty
+#     '''
 
 #-------------------------------------------------------------
 
@@ -115,8 +116,6 @@ def p_s_block(p):
     '''
     S_BLOCK : L_BRACE F R_BRACE
     '''
-    print(funDir)
-    print(currentSymTab)
 
 def p_f(p):
     '''
@@ -128,7 +127,7 @@ def p_f(p):
 
 def p_s_statute(p):
     '''
-    S_STATUTE : SOLUTION_DEF
+    S_STATUTE : VAR_DEFINITIONS
     | STATUTE
     '''
 
@@ -136,7 +135,7 @@ def p_s_statute(p):
 
 def p_solution_def(p):
     '''
-    SOLUTION_DEF : SOL S_TYPE store_type ID check_sol_duplicates L_PAREN PARAMS R_PAREN COLON BLOCK TICK
+    SOLUTION_DEF : SOL S_TYPE store_type ID check_sol_duplicates L_PAREN PARAMS R_PAREN COLON S_BLOCK TICK
     '''
 
 def p_check_sol_duplicates(p):
@@ -287,6 +286,7 @@ def p_con_var(p):
     | FLOAT_CONT
     | BOOL_CONT
     | SOLUTION_CALL
+    | PREDEFINED_SOLS
     '''
 
 #-------------------------------------------------------------
@@ -403,14 +403,14 @@ def p_u(p):
 
 def p_t(p):
     '''
-    T : ELSE BLOCK
+    T : ELSE COLON BLOCK
     '''
 
 #-------------------------------------------------------------
 
 def p_solution_call(p):
     '''
-    SOLUTION_CALL : ID L_PAREN V R_PAREN TICK
+    SOLUTION_CALL : ID L_PAREN V R_PAREN
     '''
 
 def p_v(p):
@@ -454,6 +454,98 @@ def p_y(p):
     '''
     Y : COMMA PARAMS
     | empty
+    '''
+
+#-------------------------------------------------------------
+
+def p_sol_definitions(p):
+    '''
+    SOL_DEFINITIONS : Z
+    '''
+
+def p_z(p):
+    '''
+    Z : SOLUTION_DEF Z
+    | empty
+    '''
+
+#-------------------------------------------------------------
+
+def p_main_definition(p):
+    '''
+    MAIN_DEFINITION : INT MAIN_R L_PAREN R_PAREN COLON S_BLOCK TICK
+    '''
+    print(funDir)
+    print(currentSymTab)
+
+#-------------------------------------------------------------
+
+def p_draw_circle(p):
+    '''
+    DRAW_CIRCLE : DRAW_CIRCLE_R L_PAREN EXPRESSION COMMA EXPRESSION COMMA EXPRESSION R_PAREN
+    '''
+
+#-------------------------------------------------------------
+
+def p_draw_line(p):
+    '''
+    DRAW_LINE : DRAW_LINE_R L_PAREN EXPRESSION COMMA EXPRESSION COMMA EXPRESSION COMMA EXPRESSION R_PAREN
+    '''
+
+#-------------------------------------------------------------
+
+def p_draw_rectangle(p):
+    '''
+    DRAW_RECTANGLE : DRAW_RECTANGLE_R L_PAREN EXPRESSION COMMA EXPRESSION COMMA EXPRESSION R_PAREN
+    '''
+
+#-------------------------------------------------------------
+
+def p_move_up(p):
+    '''
+    MOVE_UP : MOVE_UP_R L_PAREN EXPRESSION R_PAREN
+    '''
+
+#-------------------------------------------------------------
+
+def p_move_right(p):
+    '''
+    MOVE_RIGHT : MOVE_RIGHT_R L_PAREN EXPRESSION R_PAREN
+    '''
+
+#-------------------------------------------------------------
+
+def p_move_down(p):
+    '''
+    MOVE_DOWN : MOVE_DOWN_R L_PAREN EXPRESSION R_PAREN
+    '''
+
+#-------------------------------------------------------------
+
+def p_move_left(p):
+    '''
+    MOVE_LEFT : MOVE_LEFT_R L_PAREN EXPRESSION R_PAREN
+    '''
+
+#-------------------------------------------------------------
+
+def p_print(p):
+    '''
+    PRINT : PRINT_R L_PAREN EXPRESSION R_PAREN
+    '''
+
+#-------------------------------------------------------------
+
+def p_predefined_sols(p):
+    '''
+    PREDEFINED_SOLS : DRAW_LINE
+    | DRAW_CIRCLE
+    | DRAW_RECTANGLE
+    | MOVE_UP
+    | MOVE_RIGHT
+    | MOVE_DOWN
+    | MOVE_LEFT
+    | PRINT
     '''
 
 #-------------------------------------------------------------
