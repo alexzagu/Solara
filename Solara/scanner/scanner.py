@@ -55,23 +55,24 @@ tokens = (
     'SINGLE_COMMENT',
     'MULTI_COMMENT',
     'PROGRAM',
-    'DRAW_CIRCLE',
-    'DRAW_LINE',
-    'DRAW_RECTANGLE',
-    'MOVE_UP',
-    'MOVE_DOWN',
-    'MOVE_RIGHT',
-    'MOVE_LEFT',
-    'PRINT',
-    'CORE',
+    'DRAW_CIRCLE_R',
+    'DRAW_LINE_R',
+    'DRAW_RECTANGLE_R',
+    'MOVE_UP_R',
+    'MOVE_DOWN_R',
+    'MOVE_RIGHT_R',
+    'MOVE_LEFT_R',
+    'PRINT_R',
+    'SOLS',
     'VARS',
-    'SOL'
+    'SOL',
+    'MAIN_R'
 )
 
 # Regular Expressions.
 
 t_INT_CONT              = r'[0-9]+'
-t_FLOAT_CONT            = r'[0-9]+.[0-9]+'
+t_FLOAT_CONT            = r'[0-9]+\.[0-9]+'
 t_STRING_CONT           = r'\"(\\.|[^"])*\"'
 t_BOOL_CONT             = r'true|false'
 t_CHAR_CONT             = r'\'[a-zA-Z0-9]\''
@@ -104,35 +105,36 @@ t_TICK                  = r'\~'
 # Reserved words.
 
 reserved = {
-    'if'        :'IF',
-    'else'      :'ELSE',
-    'elif'      :'ELIF',
-    'while'     :'WHILE_CYCLE',
-    'for'       :'FOR_CYCLE',
-    'program'   :'PROGRAM',
-    'print'     :'PRINT',
-    'int'       :'INT',
-    'float'     :'FLOAT',
-    'string'    :'STRING',
-    'char'      :'CHAR',
-    'bool'      :'BOOL',
-    'list'      :'LIST',
-    'void'      :'VOID',
-    'CORE'      :'CORE',
-    'VARS'      :'VARS',
-    'sol'       :'SOL',
-    'and'       :'AND',
-    'not'       :'NOT',
-    'or'        :'OR',
-    'is'        :'IS',
-    'mod'       :'PERCENTAGE',
-    'drawCircle':'DRAW_CIRCLE',
-    'drawLine'  :'DRAW_LINE',
-    'drawRectangle':'DRAW_RECTANGLE',
-    'moveUp'    :'MOVE_UP',
-    'moveDown'  :'MOVE_DOWN',
-    'moveRight' :'MOVE_RIGHT',
-    'moveLeft'  :'MOVE_LEFT'
+    'if'            :'IF',
+    'else'          :'ELSE',
+    'elif'          :'ELIF',
+    'while'         :'WHILE_CYCLE',
+    'for'           :'FOR_CYCLE',
+    'program'       :'PROGRAM',
+    'print'         :'PRINT_R',
+    'int'           :'INT',
+    'float'         :'FLOAT',
+    'string'        :'STRING',
+    'char'          :'CHAR',
+    'bool'          :'BOOL',
+    'list'          :'LIST',
+    'void'          :'VOID',
+    'SOLS'          :'SOLS',
+    'VARS'          :'VARS',
+    'sol'           :'SOL',
+    'and'           :'AND',
+    'not'           :'NOT',
+    'or'            :'OR',
+    'is'            :'IS',
+    'mod'           :'PERCENTAGE',
+    'drawCircle'    :'DRAW_CIRCLE_R',
+    'drawLine'      :'DRAW_LINE_R',
+    'drawRectangle' :'DRAW_RECTANGLE_R',
+    'moveUp'        :'MOVE_UP_R',
+    'moveDown'      :'MOVE_DOWN_R',
+    'moveRight'     :'MOVE_RIGHT_R',
+    'moveLeft'      :'MOVE_LEFT_R',
+    'main'          :'MAIN_R'
 }
 
 t_ignore            = ' \t\r'
@@ -164,4 +166,4 @@ while True:
     tok = lexer.token()
     if not tok:
         break
-    #print(tok)
+    print(tok)
