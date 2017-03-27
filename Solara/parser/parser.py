@@ -16,11 +16,12 @@ currentType = None # Code signing of the type
 currentSymTab = None # Actual object of the symbol table
 currentVar = None # Variable that's being processed at the moment
 currentSol = None # Solution that's being processed at the moment
+programID = None # Name of the main solution (program's name)
 #-------------------------------------------------------------
 
 def p_program(p):
     '''
-    program : PROGRAM ID create_global_fun COLON VARS COLON VAR_DEFINITIONS SOLS COLON SOL_DEFINITIONS MAIN_DEFINITION
+    program : PROGRAM ID create_global_fun COLON VAR_BLOCK print_currentSymTab SOLS COLON SOL_DEFINITIONS MAIN_DEFINITION
     '''
 
 def p_create_global_fun(p):
@@ -28,15 +29,36 @@ def p_create_global_fun(p):
     create_global_fun :
     '''
     global currentSymTab
+    global programID
     currentSymTab = symbolTable()
     funDir.add(p[-1], 6, (), currentSymTab)
+    programID = p[-1]
+
+def p_print_currentSymTab(p):
+    '''
+    print_currentSymTab :
+    '''
+    print(funDir)
+    print(currentSymTab)
+
+#-------------------------------------------------------------
+
+def p_var_block(p):
+    '''
+    VAR_BLOCK : VARS COLON AA
+    '''
+
+def p_aa(p):
+    '''
+    AA : VAR_DEFINITIONS AA
+    | empty
+    '''
 
 #-------------------------------------------------------------
 
 def p_var_definitions(p):
     '''
-    VAR_DEFINITIONS : TYPE store_type A TICK VAR_DEFINITIONS
-    | empty
+    VAR_DEFINITIONS : TYPE store_type A TICK
     '''
 
 def p_store_type(p):
@@ -104,12 +126,6 @@ def p_d(p):
     | empty
     '''
 
-# def p_e(p):
-#     '''
-#     E : VAR_DEFINITIONS
-#     | empty
-#     '''
-
 #-------------------------------------------------------------
 
 def p_s_block(p):
@@ -135,7 +151,7 @@ def p_s_statute(p):
 
 def p_solution_def(p):
     '''
-    SOLUTION_DEF : SOL S_TYPE store_type ID check_sol_duplicates L_PAREN PARAMS R_PAREN COLON S_BLOCK TICK
+    SOLUTION_DEF : SOL S_TYPE store_type ID check_sol_duplicates L_PAREN PARAMS R_PAREN COLON S_BLOCK TICK print_currentSymTab
     '''
 
 def p_check_sol_duplicates(p):
@@ -305,7 +321,12 @@ def p_n(p):
 
 def p_ID_ref(p):
     '''
-    ID_REF : ID O
+    ID_REF : ID check_var_existence O
+    '''
+
+def p_check_var_existence(p):
+    '''
+    check_var_existence :
     '''
 
 def p_o(p):
@@ -473,10 +494,8 @@ def p_z(p):
 
 def p_main_definition(p):
     '''
-    MAIN_DEFINITION : INT MAIN_R L_PAREN R_PAREN COLON S_BLOCK TICK
+    MAIN_DEFINITION : INT store_type MAIN_R check_sol_duplicates L_PAREN R_PAREN COLON S_BLOCK TICK print_currentSymTab
     '''
-    print(funDir)
-    print(currentSymTab)
 
 #-------------------------------------------------------------
 

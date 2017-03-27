@@ -10,7 +10,7 @@ CORE:
 {
     sol void functionA(int A, int B, float C):
     {
-        A = (A + B) mod C
+        A = (A + B) mod C~
     }~
 
     if 5 > 4:

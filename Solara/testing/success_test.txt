@@ -7,14 +7,18 @@ VARS:
     float D = 5.5, E~
     string F = "Hola", G~
     bool H = true~
-    list I = [5, 6, "adios", 5.5, 5+5, 10 is 10]~
+    char I = 'I'~
+    list J = [5, 6, "adios", 5.5, 5+5, 10 is 10]~
 SOLS:
     sol int functionA(int A, int B, float C):
     {
+        int D = 5~
         A = (A + B) mod C~
     }~
     int main():
     {
+        int A = 5~
+
         if 5 > 4:
         {
             A = B + C~
@@ -30,7 +34,7 @@ SOLS:
 
         for A = 5~ A > B~ A = 5 + 5:
         {
-            B = B + 1 - 1 * 2~
+            B = B + 1~
         }~
 
         while (A is B) and (B is C):
@@ -38,4 +42,4 @@ SOLS:
             C = C mod A~
             I[5] = 5~
         }~
-    }
+    }~
