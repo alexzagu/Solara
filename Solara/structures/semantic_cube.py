@@ -17,8 +17,8 @@ class semanticCube:
     # Class variable
     # Dictionary that holds all information about type matching
     # It follows the following format:
-    # key: (operand, operator, operand) value: type or
-    # key: (operator, operand) value: type
+    # key: (left_type, operator, right_type) value: type or
+    # key: (operator, type) value: type
     semanticDic = {
         # Integers
         (0, '+', 0) : 0,

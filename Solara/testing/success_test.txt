@@ -18,6 +18,8 @@ SOLS:
     int main():
     {
         int A = 5~
+        A = 10~
+        F = "Que onda"~
 
         if 5 > 4:
         {
@@ -37,7 +39,7 @@ SOLS:
             B = B + 1~
         }~
 
-        while (A is B) and (B is C):
+        while (A is B) or (B is C):
         {
             C = C mod A~
             I[5] = 5~
