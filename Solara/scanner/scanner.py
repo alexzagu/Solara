@@ -74,12 +74,11 @@ tokens = (
 t_INT_CONT              = r'[0-9]+'
 t_FLOAT_CONT            = r'[0-9]+\.[0-9]+'
 t_STRING_CONT           = r'\"(\\.|[^"])*\"'
-t_BOOL_CONT             = r'true|false'
 t_CHAR_CONT             = r'\'[a-zA-Z0-9]\''
-t_AND                   = r'and|&&'
-t_IS                    = r'is|\=\='
-t_NOT                   = r'not|\!'
-t_OR                    = r'or|\|\|'
+t_AND                   = r'&&'
+t_IS                    = r'\=\='
+t_NOT                   = r'\!'
+t_OR                    = r'\|\|'
 t_ignore_SINGLE_COMMENT = r'\@.*'
 t_ignore_MULTI_COMMENT  = r'\@\*'
 t_L_BRACE               = r'\{'
@@ -99,7 +98,7 @@ t_LESS_T                = r'\<'
 t_GREATER_T_EQUALS      = r'\>\='
 t_LESS_T_EQUALS         = r'\<\='
 t_EQUALS                = r'\='
-t_PERCENTAGE            = r'\% | mod'
+t_PERCENTAGE            = r'\%'
 t_TICK                  = r'\~'
 
 # Reserved words.
@@ -127,6 +126,8 @@ reserved = {
     'or'            :'OR',
     'is'            :'IS',
     'mod'           :'PERCENTAGE',
+    'true'          :'BOOL_CONT',
+    'false'         :'BOOL_CONT',
     'drawCircle'    :'DRAW_CIRCLE_R',
     'drawLine'      :'DRAW_LINE_R',
     'drawRectangle' :'DRAW_RECTANGLE_R',
