@@ -585,15 +585,66 @@ def p_s_assignation(p):
 
 def p_while(p):
     '''
-    WHILE : WHILE_CYCLE EXPRESSION COLON BLOCK TICK
+    WHILE : WHILE_CYCLE append_jump EXPRESSION process_condition_operation COLON BLOCK end_while_operation_processing TICK
     '''
+
+def p_append_jump(p):
+    '''
+    append_jump :
+    '''
+    PJumps.append(quadQueue.count())
+
+def p_end_while_operation_processing(p):
+    '''
+    end_while_operation_processing :
+    '''
+    quad_to_modify = PJumps.pop()
+    quad_to_jump_to = PJumps.pop()
+    quadQueue.add('GOTO', None, None, quad_to_jump_to)
+    quadQueue.append_jump(quad_to_modify, quadQueue.count())
 
 #-------------------------------------------------------------
 
 def p_for(p):
     '''
-    FOR : FOR_CYCLE S_ASSIGNATION TICK EXPRESSION TICK S_ASSIGNATION COLON BLOCK TICK
+    FOR : FOR_CYCLE S_ASSIGNATION TICK append_jump EXPRESSION process_for_condition_operation TICK S_ASSIGNATION process_for_assignation_operation COLON BLOCK end_for_operation_processing TICK
     '''
+
+def p_process_for_condition_operation(p):
+    '''
+    process_for_condition_operation :
+    '''
+    exp_type = PTypes.pop()
+    if exp_type == 4:
+        operand = POperands.pop()
+        PJumps.append(quadQueue.count())
+        quadQueue.add('GOTOF', operand, None, None)
+        PJumps.append(quadQueue.count())
+        quadQueue.add('GOTO', None, None, None)
+        PJumps.append(quadQueue.count())
+    else:
+        p_error_condition_type_mismatch(p)
+
+def p_process_for_assignation_operation(p):
+    '''
+    process_for_assignation_operation :
+    '''
+    PJumps.append(quadQueue.count())
+    quadQueue.add('GOTO', None, None, None)
+    PJumps.append(quadQueue.count())
+
+def p_end_for_operation_processing(p):
+    '''
+    end_for_operation_processing :
+    '''
+    jumps = []
+    for x in range(0, 6):
+        jumps.insert(0, PJumps.pop())
+
+    quadQueue.add('GOTO', None, None, jumps[3])
+    quadQueue.append_jump(jumps[4], jumps[0])
+    quadQueue.append_jump(jumps[2], jumps[5])
+    quadQueue.append_jump(jumps[1], quadQueue.count())
 
 #-------------------------------------------------------------
 
