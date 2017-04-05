@@ -28,7 +28,8 @@ programID = None # Name of the main solution (program's name)
 POperators = [] # Stack of pending operators to process
 POperands = [] # Stack of pending operands to process
 PTypes = [] # Stack of pending operand types to process
-quadQueue = quadQueue()
+quadQueue = quadQueue() # Queue of generated quadruples
+PJumps = [] # Stack of pending quads to assign a jump to
 #-------------------------------------------------------------
 
 def p_program(p):
@@ -531,8 +532,34 @@ def p_p(p):
 
 def p_assignation(p):
     '''
-    ASSIGNATION : ID_REF EQUALS EXPRESSION TICK
+    ASSIGNATION : ID_REF EQUALS append_equals EXPRESSION process_assignation_operation TICK
     '''
+
+def p_append_equals(p):
+    '''
+    append_equals :
+    '''
+    POperators.append(p[-1])
+
+def p_process_assignation_operation(p):
+    '''
+    process_assignation_operation :
+    '''
+    if len(POperators) > 0:
+        operator = POperators[len(POperators) - 1]
+        if operator == '=':
+            right_operand = POperands.pop()
+            right_type = PTypes.pop()
+            left_operand = POperands.pop()
+            left_type = PTypes.pop()
+            operator = POperators.pop()
+            result_type = semCube.search((left_type, operator, right_type))
+
+            if not result_type is None:
+                quadQueue.add(operator, right_operand, None, left_operand)
+            else:
+                print(str(left_type) + ', ' + operator + ', ' + str(right_type))
+                p_error_type_mismatch(p)
 
 #-------------------------------------------------------------
 
@@ -551,22 +578,73 @@ def p_q(p):
 
 def p_s_assignation(p):
     '''
-    S_ASSIGNATION : ID_REF EQUALS EXPRESSION
+    S_ASSIGNATION : ID_REF EQUALS append_equals EXPRESSION process_assignation_operation
     '''
 
 #-------------------------------------------------------------
 
 def p_while(p):
     '''
-    WHILE : WHILE_CYCLE EXPRESSION COLON BLOCK TICK
+    WHILE : WHILE_CYCLE append_jump EXPRESSION process_condition_operation COLON BLOCK end_while_operation_processing TICK
     '''
+
+def p_append_jump(p):
+    '''
+    append_jump :
+    '''
+    PJumps.append(quadQueue.count())
+
+def p_end_while_operation_processing(p):
+    '''
+    end_while_operation_processing :
+    '''
+    quad_to_modify = PJumps.pop()
+    quad_to_jump_to = PJumps.pop()
+    quadQueue.add('GOTO', None, None, quad_to_jump_to)
+    quadQueue.append_jump(quad_to_modify, quadQueue.count())
 
 #-------------------------------------------------------------
 
 def p_for(p):
     '''
-    FOR : FOR_CYCLE S_ASSIGNATION TICK EXPRESSION TICK S_ASSIGNATION COLON BLOCK TICK
+    FOR : FOR_CYCLE S_ASSIGNATION TICK append_jump EXPRESSION process_for_condition_operation TICK S_ASSIGNATION process_for_assignation_operation COLON BLOCK end_for_operation_processing TICK
     '''
+
+def p_process_for_condition_operation(p):
+    '''
+    process_for_condition_operation :
+    '''
+    exp_type = PTypes.pop()
+    if exp_type == 4:
+        operand = POperands.pop()
+        PJumps.append(quadQueue.count())
+        quadQueue.add('GOTOF', operand, None, None)
+        PJumps.append(quadQueue.count())
+        quadQueue.add('GOTO', None, None, None)
+        PJumps.append(quadQueue.count())
+    else:
+        p_error_condition_type_mismatch(p)
+
+def p_process_for_assignation_operation(p):
+    '''
+    process_for_assignation_operation :
+    '''
+    PJumps.append(quadQueue.count())
+    quadQueue.add('GOTO', None, None, None)
+    PJumps.append(quadQueue.count())
+
+def p_end_for_operation_processing(p):
+    '''
+    end_for_operation_processing :
+    '''
+    jumps = []
+    for x in range(0, 6):
+        jumps.insert(0, PJumps.pop())
+
+    quadQueue.add('GOTO', None, None, jumps[3])
+    quadQueue.append_jump(jumps[4], jumps[0])
+    quadQueue.append_jump(jumps[2], jumps[5])
+    quadQueue.append_jump(jumps[1], quadQueue.count())
 
 #-------------------------------------------------------------
 
@@ -580,8 +658,36 @@ def p_cycle(p):
 
 def p_condition(p):
     '''
-    CONDITION : IF EXPRESSION COLON BLOCK R TICK
+    CONDITION : IF append_false_bottom EXPRESSION process_condition_operation COLON BLOCK R TICK end_condition_operation_processing
     '''
+
+def p_end_condition_operation_processing(p):
+    '''
+    end_condition_operation_processing :
+    '''
+    while PJumps[len(PJumps) - 1] != 'false_bottom':
+        quad_to_modify = PJumps.pop()
+        quadQueue.append_jump(quad_to_modify, quadQueue.count())
+
+    PJumps.pop()
+
+def p_append_false_bottom(p):
+    '''
+    append_false_bottom :
+    '''
+    PJumps.append('false_bottom')
+
+def p_process_condition_operation(p):
+    '''
+    process_condition_operation :
+    '''
+    exp_type = PTypes.pop()
+    if exp_type == 4:
+        operand = POperands.pop()
+        PJumps.append(quadQueue.count())
+        quadQueue.add('GOTOF', operand, None, None)
+    else:
+        p_error_condition_type_mismatch(p)
 
 def p_r(p):
     '''
@@ -591,8 +697,17 @@ def p_r(p):
 
 def p_s(p):
     '''
-    S : ELIF EXPRESSION COLON BLOCK U
+    S : ELIF process_elif_operation EXPRESSION process_condition_operation COLON BLOCK U
     '''
+
+def p_process_elif_operation(p):
+    '''
+    process_elif_operation :
+    '''
+    quad_to_modify = PJumps.pop()
+    PJumps.append(quadQueue.count())
+    quadQueue.add('GOTO', None, None, None)
+    quadQueue.append_jump(quad_to_modify, quadQueue.count())
 
 def p_u(p):
     '''
@@ -603,8 +718,24 @@ def p_u(p):
 
 def p_t(p):
     '''
-    T : ELSE COLON BLOCK
+    T : ELSE process_else_operation COLON BLOCK end_else_operation_processing
     '''
+
+def p_process_else_operation(p):
+    '''
+    process_else_operation :
+    '''
+    quad_to_modify = PJumps.pop()
+    PJumps.append(quadQueue.count())
+    quadQueue.add('GOTO', None, None, None)
+    quadQueue.append_jump(quad_to_modify, quadQueue.count())
+
+def p_end_else_operation_processing(p):
+    '''
+    end_else_operation_processing :
+    '''
+    quad_to_modify = PJumps.pop()
+    quadQueue.append_jump(quad_to_modify, quadQueue.count())
 
 #-------------------------------------------------------------
 
@@ -853,6 +984,13 @@ def p_error_type_mismatch(p):
     '''
     print('Error!')
     print('Type mismatch!')
+
+# Error-handling function for condition type mismatch
+def p_error_condition_type_mismatch(p):
+    '''
+    '''
+    print('Error!')
+    print('Condition type mismatch!')
 
 # se contruye el parser
 parser = yacc.yacc()
