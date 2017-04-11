@@ -20,8 +20,8 @@ import re
 #-------------------------------------------------------------
 funDir = functionDirectory()
 semCube = semanticCube()
-currentType = None # Code signing of the type
-currentSymTab = None # Actual object of the symbol table
+currentType = None # Code signing of the type of the current variable (currentVar)
+currentSymTab = None # Actual object of the current symbol table
 currentVar = None # Variable that's being processed at the moment
 currentSol = None # Solution that's being processed at the moment
 programID = None # Name of the main solution (program's name)
@@ -30,11 +30,14 @@ POperands = [] # Stack of pending operands to process
 PTypes = [] # Stack of pending operand types to process
 quadQueue = quadQueue() # Queue of generated quadruples
 PJumps = [] # Stack of pending quads to assign a jump to
+numParamDefined = [0, 0, 0, 0, 0] # List of number of parameters defined of each data type for the currentSol
+numLocalVarsDefined = [0, 0, 0, 0, 0] # List of number of local variables defined of each data type for the currentSol
+numTempVarsDefined = [0, 0, 0, 0, 0] # List of number of temporal variables defined of each data type for the currentSol
 #-------------------------------------------------------------
 
 def p_program(p):
     '''
-    program : PROGRAM ID create_global_fun COLON VAR_BLOCK print_currentSymTab SOLS COLON SOL_DEFINITIONS MAIN_DEFINITION
+    program : PROGRAM ID create_global_fun COLON VAR_BLOCK update_global_fun print_currentSymTab SOLS COLON SOL_DEFINITIONS MAIN_DEFINITION
     '''
 
 def p_create_global_fun(p):
@@ -43,16 +46,31 @@ def p_create_global_fun(p):
     '''
     global currentSymTab
     global programID
+    global numParamDefined
+    global numTempVarsDefined
     currentSymTab = symbolTable()
-    funDir.add(p[-1], 6, (), currentSymTab)
+    funDir.add(p[-1], 6, (), currentSymTab, numParamDefined, None, numTempVarsDefined, None)
     programID = p[-1]
+
+def p_update_global_fun(p):
+    '''
+    update_global_fun :
+    '''
+    global numParamDefined
+    global numLocalVarsDefined
+    global numTempVarsDefined
+    funDir.update_number_of_local_variables(p[-4], numLocalVarsDefined)
+    funDir.update_number_of_temp_variables(p[-4], numTempVarsDefined)
+    numParamDefined = [0, 0, 0, 0, 0]
+    numLocalVarsDefined = [0, 0, 0, 0, 0]
+    numTempVarsDefined = [0, 0, 0, 0, 0]
 
 def p_print_currentSymTab(p):
     '''
     print_currentSymTab :
     '''
-    #print(funDir)
-    #print(currentSymTab)
+    print(funDir)
+    print(currentSymTab)
 
 #-------------------------------------------------------------
 
@@ -96,7 +114,7 @@ def p_store_type(p):
 
 def p_a(p):
     '''
-    A : ID check_var_duplicates B D
+    A : ID check_var_duplicates update_local_count B D
     '''
 
 def p_check_var_duplicates(p):
@@ -111,6 +129,13 @@ def p_check_var_duplicates(p):
         currentVar = p[-1]
     else:
         p_error_duplicate_var(p[-1])
+
+def p_update_local_count(p):
+    '''
+    update_local_count :
+    '''
+    global currentType
+    numLocalVarsDefined[currentType] = numLocalVarsDefined[currentType] + 1
 
 def p_b(p):
     '''
@@ -164,7 +189,7 @@ def p_s_statute(p):
 
 def p_solution_def(p):
     '''
-    SOLUTION_DEF : SOL S_TYPE store_type ID check_sol_duplicates L_PAREN PARAMS R_PAREN COLON S_BLOCK TICK print_currentSymTab
+    SOLUTION_DEF : SOL S_TYPE store_type ID check_sol_duplicates L_PAREN PARAMS R_PAREN COLON S_BLOCK TICK update_fun print_currentSymTab
     '''
 
 def p_check_sol_duplicates(p):
@@ -176,10 +201,25 @@ def p_check_sol_duplicates(p):
         global currentType
         global currentSol
         currentSymTab = symbolTable()
-        funDir.add(p[-1], currentType, (), currentSymTab)
+        funDir.add(p[-1], currentType, (), currentSymTab, None, None, None, quadQueue.count())
         currentSol = p[-1]
     else:
         p_error_duplicate_sol(p[-1])
+
+def p_update_fun(p):
+    '''
+    update_fun :
+    '''
+    global numParamDefined
+    global numLocalVarsDefined
+    global numTempVarsDefined
+    global currentSol
+    funDir.update_number_of_param_variables(currentSol, numParamDefined)
+    funDir.update_number_of_local_variables(currentSol, numLocalVarsDefined)
+    funDir.update_number_of_temp_variables(currentSol, numTempVarsDefined)
+    numParamDefined = [0, 0, 0, 0, 0]
+    numLocalVarsDefined = [0, 0, 0, 0, 0]
+    numTempVarsDefined = [0, 0, 0, 0, 0]
 
 #-------------------------------------------------------------
 
@@ -259,6 +299,7 @@ def p_process_possible_relop_operation(p):
             quadQueue.add(operator, left_operand, right_operand, result)
             POperands.append(result)
             PTypes.append(result_type)
+            numTempVarsDefined[result_type] = numTempVarsDefined[result_type] + 1
         else:
             print(str(left_type) + ', ' + operator + ', ' + str(right_type))
             p_error_type_mismatch(p)
@@ -317,6 +358,7 @@ def p_process_possible_plus_minus_operation(p):
                 quadQueue.add(operator, left_operand, right_operand, result)
                 POperands.append(result)
                 PTypes.append(result_type)
+                numTempVarsDefined[result_type] = numTempVarsDefined[result_type] + 1
             else:
                 print(str(left_type) + ', ' + operator + ', ' + str(right_type))
                 p_error_type_mismatch(p)
@@ -363,6 +405,7 @@ def p_process_possible_multiply_divide_operation(p):
                 quadQueue.add(operator, left_operand, right_operand, result)
                 POperands.append(result)
                 PTypes.append(result_type)
+                numTempVarsDefined[result_type] = numTempVarsDefined[result_type] + 1
             else:
                 print(str(left_type) + ', ' + operator + ', ' + str(right_type))
                 p_error_type_mismatch(p)
@@ -778,7 +821,7 @@ def p_x(p):
 
 def p_params(p):
     '''
-    PARAMS : TYPE store_type ID check_param_duplicates Y
+    PARAMS : TYPE store_type ID check_param_duplicates update_param_count Y
     '''
 
 def p_check_param_duplicates(p):
@@ -793,6 +836,13 @@ def p_check_param_duplicates(p):
         funDir.append_parameter(currentSol, currentType)
     else:
         p_error_duplicate_param(p[-1])
+
+def p_update_param_count(p):
+    '''
+    update_param_count :
+    '''
+    global currentType
+    numParamDefined[currentType] = numParamDefined[currentType] + 1
 
 def p_y(p):
     '''
@@ -817,7 +867,7 @@ def p_z(p):
 
 def p_main_definition(p):
     '''
-    MAIN_DEFINITION : INT store_type MAIN_R check_sol_duplicates L_PAREN R_PAREN COLON S_BLOCK TICK print_currentSymTab
+    MAIN_DEFINITION : INT store_type MAIN_R check_sol_duplicates L_PAREN R_PAREN COLON S_BLOCK TICK update_fun print_currentSymTab
     '''
     print(quadQueue)
 
