@@ -8,7 +8,7 @@ VARS:
     string F = "Hola", G~
     bool H = true~
     char I = 'I'~
-    list J = [5, 6, "adios", 5.5, 5+5, 10 is 10]~
+    @list J = [5, 6, "adios", 5.5, 5+5, 10 is 10]~
 SOLS:
     sol int functionA(int A, int B, float C):
     {
@@ -42,6 +42,6 @@ SOLS:
         while (A is B) or (B is C):
         {
             C = C mod A~
-            I[5] = 5~
+            I = 'i'~
         }~
     }~
