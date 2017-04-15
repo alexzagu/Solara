@@ -16,6 +16,7 @@ from structures.function_directory import functionDirectory
 from structures.symbol_table import symbolTable
 from structures.semantic_cube import semanticCube
 from structures.quad_queue import quadQueue
+from structures.virtual_machine import virtualMachine
 import re
 #-------------------------------------------------------------
 funDir = functionDirectory()
@@ -33,6 +34,7 @@ PJumps = [] # Stack of pending quads to assign a jump to
 numParamDefined = [0, 0, 0, 0, 0] # List of number of parameters defined of each data type for the currentSol
 numLocalVarsDefined = [0, 0, 0, 0, 0] # List of number of local variables defined of each data type for the currentSol
 numTempVarsDefined = [0, 0, 0, 0, 0] # List of number of temporal variables defined of each data type for the currentSol
+virMachine = None
 #-------------------------------------------------------------
 
 def p_program(p):
@@ -870,6 +872,8 @@ def p_main_definition(p):
     MAIN_DEFINITION : INT store_type MAIN_R check_sol_duplicates L_PAREN R_PAREN COLON S_BLOCK TICK update_fun print_currentSymTab
     '''
     print(quadQueue)
+    print("******************************************************************")
+    virMachine = virtualMachine(quadQueue)
 
 #-------------------------------------------------------------
 
