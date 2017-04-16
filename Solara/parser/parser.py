@@ -968,6 +968,7 @@ def p_error(p):
     print(p.value)
     print(p.type)
     print(p.lineno)
+    sys.exit()
 
 # Error-handling function for duplicate variables
 def p_error_duplicate_var(p):
@@ -1071,6 +1072,7 @@ with open('../testing/success_test.txt', 'r') as myfile:
 
 #with open('../testing/failure_test.txt', 'r') as myfile:
 #    data = myfile.read()
-
+yacc.parse(data, tracking=True)
 result = parser.parse(data)
+
 print(result)
