@@ -66,7 +66,8 @@ tokens = (
     'SOLS',
     'VARS',
     'SOL',
-    'MAIN_R'
+    'MAIN_R',
+    'RETURN'
 )
 
 # Regular Expressions.
@@ -135,7 +136,8 @@ reserved = {
     'moveDown'      :'MOVE_DOWN_R',
     'moveRight'     :'MOVE_RIGHT_R',
     'moveLeft'      :'MOVE_LEFT_R',
-    'main'          :'MAIN_R'
+    'main'          :'MAIN_R',
+    'return'        :'RETURN'
 }
 
 t_ignore            = ' \t\r'

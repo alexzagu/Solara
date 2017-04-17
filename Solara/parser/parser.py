@@ -230,7 +230,42 @@ def p_statute(p):
     STATUTE : CONDITION
     | CYCLE
     | ASSIGNATION
+    | RETURN_STATEMENT
     '''
+
+#-------------------------------------------------------------
+
+def p_return(p):
+    '''
+    RETURN_STATEMENT : RETURN EXPRESSION TICK check_return_type_correspondence process_return_operation_with_return_value
+    | RETURN TICK process_return_operation_without_return_value
+    '''
+
+def p_check_return_type_correspondence(p):
+    '''
+    check_return_type_correspondence :
+    '''
+    global currentSol
+    exp_type = PTypes[len(PTypes) - 1]
+    sol_return_type = funDir.search(currentSol)[0]
+    if exp_type != sol_return_type:
+        p_error_return_type_mismatch(p)
+
+def p_process_return_operation_with_return_value(p):
+    '''
+    process_return_operation_with_return_value :
+    '''
+    PTypes.pop()
+    operand = POperands.pop()
+    quadQueue.add('RETURN', operand, None, None)
+    quadQueue.add('ENDPROC', None, None, None)
+
+def p_process_return_operation_without_return_value(p):
+    '''
+    process_return_operation_without_return_value :
+    '''
+    quadQueue.add('RETURN', None, None, None)
+    quadQueue.add('ENDPROC', None, None, None)
 
 #-------------------------------------------------------------
 
@@ -976,6 +1011,7 @@ def p_error_duplicate_var(p):
     '''
     print('Error!')
     print('Variable ' + p + ' already defined.')
+    sys.exit()
 
 # Error-handling function for duplicate parameters
 def p_error_duplicate_param(p):
@@ -983,6 +1019,7 @@ def p_error_duplicate_param(p):
     '''
     print('Error!')
     print('Parameter ' + p + ' already defined.')
+    sys.exit()
 
 # Error-handling function for duplicate solutions
 def p_error_duplicate_sol(p):
@@ -990,6 +1027,7 @@ def p_error_duplicate_sol(p):
     '''
     print('Error!')
     print('Solution ' + p + ' already defined.')
+    sys.exit()
 
 # Error-handling function for undefined variables
 def p_error_undefined_var(p):
@@ -997,6 +1035,7 @@ def p_error_undefined_var(p):
     '''
     print('Error!')
     print('Variable ' + p + ' is not defined.')
+    sys.exit()
 
 # Error-handling function for noninteger indexing
 def p_error_noninteger_indexing(p):
@@ -1004,6 +1043,7 @@ def p_error_noninteger_indexing(p):
     '''
     print('Error!')
     print('Trying to index a list using a non-integer value.')
+    sys.exit()
 
 # Error-handling function for undefined solutions
 def p_error_undefined_sol(p):
@@ -1011,6 +1051,7 @@ def p_error_undefined_sol(p):
     '''
     print('Error!')
     print('Solution ' + p + ' is not defined.')
+    sys.exit()
 
 # Error-handling function for when main solution is called
 def p_error_main_not_callable(p):
@@ -1018,6 +1059,7 @@ def p_error_main_not_callable(p):
     '''
     print('Error!')
     print('Main solution is not a callable solution.')
+    sys.exit()
 
 # Error-handling function for unidentified constants
 def p_error_unidentified_constant(p):
@@ -1025,6 +1067,7 @@ def p_error_unidentified_constant(p):
     '''
     print('Error!')
     print('Constant ' + p + ' is not identified.')
+    sys.exit()
 
 # Error-handling function for sign type mismatch
 def p_error_sign_type_mismatch(p):
@@ -1032,6 +1075,7 @@ def p_error_sign_type_mismatch(p):
     '''
     print('Error!')
     print('Trying to enforce a sign to a non-number value.')
+    sys.exit()
 
 # Error-handling function for type mismatch
 def p_error_type_mismatch(p):
@@ -1039,6 +1083,7 @@ def p_error_type_mismatch(p):
     '''
     print('Error!')
     print('Type mismatch!')
+    sys.exit()
 
 # Error-handling function for condition type mismatch
 def p_error_condition_type_mismatch(p):
@@ -1046,6 +1091,16 @@ def p_error_condition_type_mismatch(p):
     '''
     print('Error!')
     print('Condition type mismatch!')
+    sys.exit()
+
+# Error-handling function for return type mismatch
+def p_error_return_type_mismatch(p):
+    '''
+    '''
+    print('Error!')
+    print('Return type mismatch!')
+    sys.exit()
+
 
 # se contruye el parser
 parser = yacc.yacc()
@@ -1072,7 +1127,5 @@ with open('../testing/success_test.txt', 'r') as myfile:
 
 #with open('../testing/failure_test.txt', 'r') as myfile:
 #    data = myfile.read()
-yacc.parse(data, tracking=True)
-result = parser.parse(data)
-
+result = parser.parse(data, tracking=True)
 print(result)
