@@ -40,6 +40,9 @@ class memoryBlock:
     def __unicode__(self):
         return ""
 
+    # Method definitions
+
+    # Save method
     def save(self, value, type, next):
         tempMemUnit = memoryUnit()
         tempMemUnit.set_value(value)
@@ -60,19 +63,20 @@ class memoryBlock:
             self.countString += 1
             return self.stringMIN + (self.countString - 1)
 
-        elif type == 3 and self.countBool <= self.charMAX:
+        elif type == 3 and self.countChar <= self.charMAX:
             self.memBlock[3].append(tempMemUnit)
-            self.countBool += 1
-            return self.boolMIN + (self.countBool - 1)
-
-        elif type == 4 and self.countChar <= self.boolMAX:
-            self.memBlock[4].append(tempMemUnit)
             self.countChar += 1
             return self.charMIN + (self.countChar - 1)
+
+        elif type == 4 and self.countBool <= self.boolMAX:
+            self.memBlock[4].append(tempMemUnit)
+            self.countBool += 1
+            return self.boolMIN + (self.countBool - 1)
 
         else:
             return None
 
+    # Get value method
     def get_value(self, virtual_address):
 
         if self.intMIN <= virtual_address <= self.intMAX:
@@ -88,11 +92,43 @@ class memoryBlock:
             return self.memBlock[4][virtual_address - self.charMIN].get_value
 
         elif self.boolMIN <= virtual_address <= self.boolMAX:
-            return self.memBlock[3][virtual_address - self.stringMIN].get_value
+            return self.memBlock[3][virtual_address - self.boolMIN].get_value
 
         else:
             return None
 
+    # AVAIL method
+    def avail(self, type):
+        if type == 0 and self.countInt <= self.intMAX:
+            self.countInt += 1
+            return self.intMIN + (self.countInt - 1)
 
+        elif type == 1 and self.countFloat <= self.floatMAX:
+            self.countFloat += 1
+            return self.floatMIN + (self.countFloat - 1)
 
+        elif type == 2 and self.countString <= self.stringMAX:
+            self.countString += 1
+            return self.stringMIN + (self.countString - 1)
 
+        elif type == 3 and self.countChar <= self.charMAX:
+            self.countChar += 1
+            return self.charMIN + (self.countChar - 1)
+
+        elif type == 4 and self.countBool <= self.boolMAX:
+            self.countBool += 1
+            return self.boolMIN + (self.countBool - 1)
+
+        else:
+            return None
+
+    # Clear method
+    def clear(self):
+        self.countInt = 0
+        self.countFloat = 0
+        self.countString = 0
+        self.countChar = 0
+        self.countBool = 0
+        for range in self.memBlock:
+            for unit in range:
+                range.remove(unit)

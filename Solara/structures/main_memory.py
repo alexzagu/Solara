@@ -3,18 +3,18 @@
 #  Solara
 #  Alejandro Zamudio A01280223
 #  Melissa Figueroa A01280388
-#  05/03/17
+#  18/04/17
 # ------------------------------------------------------------
 
 from structures.memory_block import memoryBlock
 
-class executionBlock:
+class mainMemory:
     # Constructor
     def __init__(self):
-        print('Initializing execution block....')
-        self.parameters = memoryBlock()
-        self.local = memoryBlock()
+        print('Initializing main memory....')
+        self.globals = memoryBlock()
         self.temporal = memoryBlock()
+        self.constants = memoryBlock()
 
     # stringTo methods
 
@@ -26,34 +26,34 @@ class executionBlock:
 
     # Method definitions
 
-    # AVAIL for parameters method
-    def availParameters(self, type):
-        return self.parameters.avail(type)
-
-    # AVAIL for local method
-    def availLocal(self, type):
-        return self.local.avail(type)
+    # AVAIL for globals method
+    def availGlobals(self, type):
+        return self.globals.avail(type)
 
     # AVAIL for temporal method
     def availTemporal(self, type):
         return self.temporal.avail(type)
 
+    # AVAIL for constants method
+    def availConstants(self, type):
+        return self.constants.avail(type)
+
     # Clear method
     def clear(self):
-        self.parameters.clear()
-        self.local.clear()
+        self.globals.clear()
         self.temporal.clear()
+        self.constants.clear()
 
     # Memory allocation method
-    def malloc(self, listP, listL, listT):
-        for x in listP:
-            for y in listP[x]:
-                self.parameters.save(None, x, None)
-
-        for x in listL:
-            for y in listL[x]:
-                self.local.save(None, x, None)
+    def malloc(self, listG, listT, listC):
+        for x in listG:
+            for y in listG[x]:
+                self.globals.save(None, x, None)
 
         for x in listT:
             for y in listT[x]:
                 self.temporal.save(None, x, None)
+
+        for x in listC:
+            for y in listC[x]:
+                self.constants.save(None, x, None)

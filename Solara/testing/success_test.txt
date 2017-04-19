@@ -10,13 +10,13 @@ VARS:
     char I = 'I'~
     @list J = [5, 6, "adios", 5.5, 5+5, 10 is 10]~
 SOLS:
-    sol int functionA(int A, int B, float C):
+    sol int functionA(int A, int B, int C):
     {
         int D = 5~
-        A = (A + B) mod C~
+        A = (A + B) + C~
         return A~
     }~
-    sol void functionB(int A, int B, float C):
+    sol void functionB(int A, int B, int C):
     {
         int D = 5~
         A = (A + B) mod C~
@@ -46,7 +46,7 @@ SOLS:
             B = B + 1~
         }~
 
-        while (A is B) or (B is C):
+        while !((A is B) or (B is C)):
         {
             C = C mod A~
             I = 'i'~
