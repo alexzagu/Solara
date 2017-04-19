@@ -47,3 +47,7 @@ class symbolTable:
             return self.symbolDic[name]
         else:
             return None
+
+    # Delete method
+    def clear(self):
+        self.symbolDic.clear()

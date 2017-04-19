@@ -17,6 +17,8 @@ from structures.symbol_table import symbolTable
 from structures.semantic_cube import semanticCube
 from structures.quad_queue import quadQueue
 from structures.virtual_machine import virtualMachine
+from structures.main_memory import mainMemory
+from structures.execution_block import executionBlock
 import re
 #-------------------------------------------------------------
 funDir = functionDirectory()
@@ -25,6 +27,10 @@ currentType = None # Code signing of the type of the current variable (currentVa
 currentSymTab = None # Actual object of the current symbol table
 currentVar = None # Variable that's being processed at the moment
 currentSol = None # Solution that's being processed at the moment
+solHasReturn = False # Boolean that specifies if solution has at least one return statement
+is_id_ref_global = False # Boolean that specifies if ID_REF is local or global
+currentVar_IDREF = None # Variable that's being processed at the moment in ID_REF
+currentType_IDREF = None # Code signing of the type of the current variable for ID_REF (currentVar_IDREF)
 programID = None # Name of the main solution (program's name)
 POperators = [] # Stack of pending operators to process
 POperands = [] # Stack of pending operands to process
@@ -32,46 +38,74 @@ PTypes = [] # Stack of pending operand types to process
 quadQueue = quadQueue() # Queue of generated quadruples
 PJumps = [] # Stack of pending quads to assign a jump to
 numParamDefined = [0, 0, 0, 0, 0] # List of number of parameters defined of each data type for the currentSol
+numConstUsed = [0, 0, 0, 0, 0] # List of number of constants used of each data type for the entire program
 numLocalVarsDefined = [0, 0, 0, 0, 0] # List of number of local variables defined of each data type for the currentSol
+numGlobalVarsDefined = [0, 0, 0, 0, 0] # List of number of global variables defined of each data type for the program
 numTempVarsDefined = [0, 0, 0, 0, 0] # List of number of temporal variables defined of each data type for the currentSol
+param_counter = -1 # Parameter counter for solution call semantic analysis
+solution_name = None # Solution name for solution call semantic analysis
 virMachine = None
+mainMemory = mainMemory()
+executionBlock = executionBlock()
 #-------------------------------------------------------------
 
 def p_program(p):
     '''
-    program : PROGRAM ID create_global_fun COLON VAR_BLOCK update_global_fun print_currentSymTab SOLS COLON SOL_DEFINITIONS MAIN_DEFINITION
+    program : PROGRAM ID create_global_fun COLON VAR_BLOCK update_global_fun print_currentSymTab SOLS COLON SOL_DEFINITIONS MAIN_DEFINITION update_constant_number free_symbol_table print_funDir
     '''
+
+def p_print_funDir(p):
+    '''
+    print_funDir :
+    '''
+    print(funDir)
+
+def p_free_symbol_table(p):
+    '''
+    free_symbol_table :
+    '''
+    global currentSol
+    funDir.search(currentSol)[2].clear()
+
+def p_update_constant_number(p):
+    '''
+    update_constant_number :
+    '''
+    global numConstUsed
+    global programID
+    funDir.update_number_of_constants(programID, numConstUsed)
+    numConstUsed = [0, 0, 0, 0, 0]
 
 def p_create_global_fun(p):
     '''
     create_global_fun :
     '''
     global currentSymTab
+    global currentSol
     global programID
-    global numParamDefined
-    global numTempVarsDefined
     currentSymTab = symbolTable()
-    funDir.add(p[-1], 6, (), currentSymTab, numParamDefined, None, numTempVarsDefined, None)
+    funDir.add(p[-1], 6, (), currentSymTab, None, None, None, None)
     programID = p[-1]
+    currentSol = p[-1]
 
 def p_update_global_fun(p):
     '''
     update_global_fun :
     '''
-    global numParamDefined
-    global numLocalVarsDefined
+    global numGlobalVarsDefined
     global numTempVarsDefined
-    funDir.update_number_of_local_variables(p[-4], numLocalVarsDefined)
-    funDir.update_number_of_temp_variables(p[-4], numTempVarsDefined)
-    numParamDefined = [0, 0, 0, 0, 0]
-    numLocalVarsDefined = [0, 0, 0, 0, 0]
+    global numLocalVarsDefined
+    global programID
+    funDir.update_number_of_global_variables(programID, numGlobalVarsDefined)
+    funDir.update_number_of_temp_variables(programID, numTempVarsDefined)
+    numGlobalVarsDefined = [0, 0, 0, 0, 0]
     numTempVarsDefined = [0, 0, 0, 0, 0]
+    numLocalVarsDefined = [0, 0, 0, 0, 0]
 
 def p_print_currentSymTab(p):
     '''
     print_currentSymTab :
     '''
-    print(funDir)
     print(currentSymTab)
 
 #-------------------------------------------------------------
@@ -126,8 +160,16 @@ def p_check_var_duplicates(p):
     global currentSymTab
     global currentType
     global currentVar
+    global currentSol
+    global programID
     if currentSymTab.search(p[-1]) is None:
-        currentSymTab.add(p[-1], currentType, None)
+        if programID == currentSol:
+            virtual_address = mainMemory.availGlobals(currentType)
+        else:
+            virtual_address = executionBlock.availLocal(currentType)
+        if virtual_address is None:
+            p_error_exceeded_memory_capability(p)
+        currentSymTab.add(p[-1], currentType, virtual_address)
         currentVar = p[-1]
     else:
         p_error_duplicate_var(p[-1])
@@ -138,6 +180,7 @@ def p_update_local_count(p):
     '''
     global currentType
     numLocalVarsDefined[currentType] = numLocalVarsDefined[currentType] + 1
+    numGlobalVarsDefined[currentType] = numGlobalVarsDefined[currentType] + 1
 
 def p_b(p):
     '''
@@ -152,11 +195,11 @@ def p_assign_var_value(p):
     global currentSymTab
     global currentVar
     global currentType
-    currentSymTab.add(currentVar, currentType, p[-1])
+    #currentSymTab.add(currentVar, currentType, p[-1])
 
 def p_c(p):
     '''
-    C : EXPRESSION
+    C : S_EXPRESSION
     | LIST_EXP
     '''
 
@@ -191,8 +234,14 @@ def p_s_statute(p):
 
 def p_solution_def(p):
     '''
-    SOLUTION_DEF : SOL S_TYPE store_type ID check_sol_duplicates L_PAREN PARAMS R_PAREN COLON S_BLOCK TICK update_fun print_currentSymTab
+    SOLUTION_DEF : SOL S_TYPE store_type ID check_sol_duplicates L_PAREN PARAMS R_PAREN COLON S_BLOCK TICK update_fun print_currentSymTab free_symbol_table reset_execution_block
     '''
+
+def p_reset_execution_block(p):
+    '''
+    reset_execution_block :
+    '''
+    executionBlock.clear()
 
 def p_check_sol_duplicates(p):
     '''
@@ -230,6 +279,7 @@ def p_statute(p):
     STATUTE : CONDITION
     | CYCLE
     | ASSIGNATION
+    | CON_VAR TICK
     | RETURN_STATEMENT
     '''
 
@@ -237,7 +287,7 @@ def p_statute(p):
 
 def p_return(p):
     '''
-    RETURN_STATEMENT : RETURN EXPRESSION TICK check_return_type_correspondence process_return_operation_with_return_value
+    RETURN_STATEMENT : RETURN S_EXPRESSION TICK check_return_type_correspondence process_return_operation_with_return_value
     | RETURN TICK process_return_operation_without_return_value
     '''
 
@@ -332,9 +382,17 @@ def p_process_possible_relop_operation(p):
         result_type = semCube.search((left_type, operator, right_type))
 
         if not result_type is None:
-            result = quadQueue.avail()
-            quadQueue.add(operator, left_operand, right_operand, result)
-            POperands.append(result)
+            global programID
+            global currentSol
+            if programID == currentSol:
+                virtual_address = mainMemory.availTemporal(result_type)
+            else:
+                virtual_address = executionBlock.availTemporal(result_type)
+            if virtual_address is None:
+                p_error_exceeded_memory_capability(p)
+
+            quadQueue.add(operator, left_operand, right_operand, virtual_address)
+            POperands.append(virtual_address)
             PTypes.append(result_type)
             numTempVarsDefined[result_type] = numTempVarsDefined[result_type] + 1
         else:
@@ -391,9 +449,17 @@ def p_process_possible_plus_minus_operation(p):
             result_type = semCube.search((left_type, operator, right_type))
 
             if not result_type is None:
-                result = quadQueue.avail()
-                quadQueue.add(operator, left_operand, right_operand, result)
-                POperands.append(result)
+                global programID
+                global currentSol
+                if programID == currentSol:
+                    virtual_address = mainMemory.availTemporal(result_type)
+                else:
+                    virtual_address = executionBlock.availTemporal(result_type)
+                if virtual_address is None:
+                    p_error_exceeded_memory_capability(p)
+
+                quadQueue.add(operator, left_operand, right_operand, virtual_address)
+                POperands.append(virtual_address)
                 PTypes.append(result_type)
                 numTempVarsDefined[result_type] = numTempVarsDefined[result_type] + 1
             else:
@@ -438,9 +504,17 @@ def p_process_possible_multiply_divide_operation(p):
             result_type = semCube.search((left_type, operator, right_type))
 
             if not result_type is None:
-                result = quadQueue.avail()
-                quadQueue.add(operator, left_operand, right_operand, result)
-                POperands.append(result)
+                global programID
+                global currentSol
+                if programID == currentSol:
+                    virtual_address = mainMemory.availTemporal(result_type)
+                else:
+                    virtual_address = executionBlock.availTemporal(result_type)
+                if virtual_address is None:
+                    p_error_exceeded_memory_capability(p)
+
+                quadQueue.add(operator, left_operand, right_operand, virtual_address)
+                POperands.append(virtual_address)
                 PTypes.append(result_type)
                 numTempVarsDefined[result_type] = numTempVarsDefined[result_type] + 1
             else:
@@ -467,8 +541,8 @@ def p_l(p):
 
 def p_factor(p):
     '''
-    FACTOR : L_PAREN push_false_bottom EXPRESSION R_PAREN pop_false_bottom
-    | M CON_VAR check_sign_type_correspondence
+    FACTOR : L_PAREN push_false_bottom S_EXPRESSION R_PAREN pop_false_bottom
+    | CON_VAR
     '''
 
 def p_push_false_bottom(p):
@@ -482,28 +556,6 @@ def p_pop_false_bottom(p):
     pop_false_bottom :
     '''
     POperators.pop()
-
-def p_check_sign_type_correspondence(p):
-    '''
-    check_sign_type_correspondence :
-    '''
-    if p[-2] == '+' or p[-2] == '-':
-        var_type = PTypes[len(PTypes) - 1]
-        if not (var_type == 0 or var_type == 1):
-            p_error_sign_type_mismatch(p)
-
-def p_m(p):
-    '''
-    M : PLUS
-    | MINUS
-    | empty
-    '''
-    if p[1] == '+':
-        POperators.append('+')
-        p[0] = '+'
-    elif p[-1] == '-':
-        POperators.append('-')
-        p[0] = '-'
 
 #-------------------------------------------------------------
 
@@ -523,6 +575,7 @@ def p_con_var_terminal(p):
     | FLOAT_CONT
     | BOOL_CONT
     '''
+    global numConstUsed
     int_r = re.compile(t_INT_CONT)
     string_r = re.compile(t_STRING_CONT)
     char_r = re.compile(t_CHAR_CONT)
@@ -530,18 +583,23 @@ def p_con_var_terminal(p):
     if p[1] == 'true' or p[1] == 'false':
         POperands.append(p[1] == 'true')
         PTypes.append(4)
+        numConstUsed[4] = numConstUsed[4] + 1
     elif float_r.match(p[1]):
         POperands.append(float(p[1]))
         PTypes.append(1)
+        numConstUsed[1] = numConstUsed[1] + 1
     elif int_r.match(p[1]):
         POperands.append(int(p[1]))
         PTypes.append(0)
+        numConstUsed[0] = numConstUsed[0] + 1
     elif string_r.match(p[1]):
         POperands.append(p[1])
         PTypes.append(2)
+        numConstUsed[2] = numConstUsed[2] + 1
     elif char_r.match(p[1]):
         POperands.append(p[1])
         PTypes.append(3)
+        numConstUsed[3] = numConstUsed[3] + 1
     else:
         p_error_unidentified_constant(p)
 
@@ -549,13 +607,44 @@ def p_con_var_terminal(p):
 
 def p_negation(p):
     '''
-    NEGATION : N EXPRESSION
+    NEGATION : N S_EXPRESSION process_negation_operation
     '''
+
+def p_process_negation_operation(p):
+    '''
+    process_negation_operation :
+    '''
+    if len(POperators) > 0:
+        operator = POperators[len(POperators) - 1]
+        if operator == '!' or operator == 'not':
+            operand = POperands.pop()
+            type = PTypes.pop()
+            operator = POperators.pop()
+            result_type = semCube.search((operator, type))
+
+            if not result_type is None:
+                global programID
+                global currentSol
+                if programID == currentSol:
+                    virtual_address = mainMemory.availTemporal(result_type)
+                else:
+                    virtual_address = executionBlock.availTemporal(result_type)
+                if virtual_address is None:
+                    p_error_exceeded_memory_capability(p)
+
+                quadQueue.add(operator, operand, None, virtual_address)
+                POperands.append(virtual_address)
+                PTypes.append(result_type)
+                numTempVarsDefined[result_type] = numTempVarsDefined[result_type] + 1
+            else:
+                print(operator + ', ' + str(type))
+                p_error_type_mismatch(p)
 
 def p_n(p):
     '''
     N : NOT
     '''
+    POperators.append(p[1])
 
 #-------------------------------------------------------------
 
@@ -563,8 +652,6 @@ def p_ID_ref(p):
     '''
     ID_REF : ID check_var_existence get_var_type O
     '''
-    POperands.append(p[1])
-    PTypes.append(p[3])
 
 def p_check_var_existence(p):
     '''
@@ -572,21 +659,47 @@ def p_check_var_existence(p):
     '''
     if currentSymTab.search(p[-1]) is None and funDir.search(programID)[2].search(p[-1]) is None:
         p_error_undefined_var(p[-1])
+    global currentVar_IDREF
+    currentVar_IDREF = p[-1]
 
 def p_get_var_type(p):
     '''
     get_var_type :
     '''
+    global is_id_ref_global
+    global currentType_IDREF
     if currentSymTab.search(p[-2]) is None:
-        p[0] = funDir.search(programID)[2].search(p[-2])[0]
+        currentType_IDREF = funDir.search(programID)[2].search(p[-2])[0]
+        is_id_ref_global = True
     else:
-        p[0] = currentSymTab.search(p[-2])[0]
+        currentType_IDREF = currentSymTab.search(p[-2])[0]
+        is_id_ref_global = False
 
 def p_o(p):
     '''
-    O : L_BRACK EXPRESSION check_int_type R_BRACK
+    O : L_BRACK S_EXPRESSION check_int_type R_BRACK
     | empty
     '''
+    global currentVar_IDREF
+    global currentType_IDREF
+    global currentSol
+    global programID
+    global is_id_ref_global
+    if currentType_IDREF == 5:
+        # TODO: Missing stuff
+        if is_id_ref_global:
+            virtual_address = funDir.search(programID)[2].search(currentVar_IDREF)[1]
+        else:
+            virtual_address = funDir.search(currentSol)[2].search(currentVar_IDREF)[1]
+        POperands.append(virtual_address)
+        PTypes.append(currentType_IDREF)
+    else:
+        if is_id_ref_global:
+            virtual_address = funDir.search(programID)[2].search(currentVar_IDREF)[1]
+        else:
+            virtual_address = funDir.search(currentSol)[2].search(currentVar_IDREF)[1]
+        POperands.append(virtual_address)
+        PTypes.append(currentType_IDREF)
 
 def p_check_int_type(p):
     '''
@@ -599,12 +712,12 @@ def p_check_int_type(p):
 
 def p_list_exp(p):
     '''
-    LIST_EXP : L_BRACK EXPRESSION P R_BRACK
+    LIST_EXP : L_BRACK S_EXPRESSION P R_BRACK
     '''
 
 def p_p(p):
     '''
-    P : COMMA EXPRESSION P
+    P : COMMA S_EXPRESSION P
     | empty
     '''
 
@@ -612,7 +725,7 @@ def p_p(p):
 
 def p_assignation(p):
     '''
-    ASSIGNATION : ID_REF EQUALS append_equals EXPRESSION process_assignation_operation TICK
+    ASSIGNATION : ID_REF EQUALS append_equals S_EXPRESSION process_assignation_operation TICK
     '''
 
 def p_append_equals(p):
@@ -658,14 +771,14 @@ def p_q(p):
 
 def p_s_assignation(p):
     '''
-    S_ASSIGNATION : ID_REF EQUALS append_equals EXPRESSION process_assignation_operation
+    S_ASSIGNATION : ID_REF EQUALS append_equals S_EXPRESSION process_assignation_operation
     '''
 
 #-------------------------------------------------------------
 
 def p_while(p):
     '''
-    WHILE : WHILE_CYCLE append_jump EXPRESSION process_condition_operation COLON BLOCK end_while_operation_processing TICK
+    WHILE : WHILE_CYCLE append_jump S_EXPRESSION process_condition_operation COLON BLOCK end_while_operation_processing TICK
     '''
 
 def p_append_jump(p):
@@ -687,7 +800,7 @@ def p_end_while_operation_processing(p):
 
 def p_for(p):
     '''
-    FOR : FOR_CYCLE S_ASSIGNATION TICK append_jump EXPRESSION process_for_condition_operation TICK S_ASSIGNATION process_for_assignation_operation COLON BLOCK end_for_operation_processing TICK
+    FOR : FOR_CYCLE S_ASSIGNATION TICK append_jump S_EXPRESSION process_for_condition_operation TICK S_ASSIGNATION process_for_assignation_operation COLON BLOCK end_for_operation_processing TICK
     '''
 
 def p_process_for_condition_operation(p):
@@ -738,7 +851,7 @@ def p_cycle(p):
 
 def p_condition(p):
     '''
-    CONDITION : IF append_false_bottom EXPRESSION process_condition_operation COLON BLOCK R TICK end_condition_operation_processing
+    CONDITION : IF append_false_bottom S_EXPRESSION process_condition_operation COLON BLOCK R TICK end_condition_operation_processing
     '''
 
 def p_end_condition_operation_processing(p):
@@ -773,11 +886,12 @@ def p_r(p):
     '''
     R : S
     | T
+    | empty
     '''
 
 def p_s(p):
     '''
-    S : ELIF process_elif_operation EXPRESSION process_condition_operation COLON BLOCK U
+    S : ELIF process_elif_operation S_EXPRESSION process_condition_operation COLON BLOCK U
     '''
 
 def p_process_elif_operation(p):
@@ -821,10 +935,31 @@ def p_end_else_operation_processing(p):
 
 def p_solution_call(p):
     '''
-    SOLUTION_CALL : ID check_sol_existence L_PAREN V R_PAREN
+    SOLUTION_CALL : ID check_sol_existence L_PAREN generate_era_quad V R_PAREN end_argument_processing
     '''
     POperands.append(p[1])
     PTypes.append(p[2])
+
+def p_end_argument_processing(p):
+    '''
+    end_argument_processing :
+    '''
+    global param_counter
+    global solution_name
+    if param_counter == (len(funDir.search(solution_name)[1]) - 1):
+        quadQueue.add('GOSUB', solution_name, None, funDir.search(solution_name)[6])
+        param_counter = -1
+    else:
+        p_error_less_parameters_than_expected(p)
+
+def p_generate_era_quad(p):
+    '''
+    generate_era_quad :
+    '''
+    quadQueue.add('era', p[-3], None, None)
+    global param_counter
+    param_counter = param_counter + 1
+
 
 def p_check_sol_existence(p):
     '''
@@ -836,22 +971,50 @@ def p_check_sol_existence(p):
         p_error_main_not_callable(p)
     else:
         p[0] = funDir.search(p[-1])[0]
+        global solution_name
+        solution_name = p[-1]
 
 def p_v(p):
     '''
-    V : W X
+    V : S_EXPRESSION process_argument X
     '''
 
-def p_w(p):
+def p_process_argument(p):
     '''
-    W : EXPRESSION
-    | NEGATION
+    process_argument :
     '''
+    argument = POperands.pop()
+    argument_type = PTypes.pop()
+    global solution_name
+    global param_counter
+    if param_counter < len(funDir.search(solution_name)[1]):
+        if argument_type == funDir.search(solution_name)[1][param_counter]:
+            quadQueue.add('PARAMETER', argument, None, param_counter + 1)
+        else:
+            p_error_argument_type_mismatch(p)
+    else:
+        p_error_more_parameters_than_expected(p)
+
 
 def p_x(p):
     '''
-    X : COMMA V
+    X : COMMA update_parameter_counter V
     | empty
+    '''
+
+def p_update_parameter_counter(p):
+    '''
+    update_parameter_counter :
+    '''
+    global param_counter
+    param_counter = param_counter + 1
+
+#-------------------------------------------------------------
+
+def p_s_expression(p):
+    '''
+    S_EXPRESSION : EXPRESSION
+    | NEGATION
     '''
 
 #-------------------------------------------------------------
@@ -869,7 +1032,10 @@ def p_check_param_duplicates(p):
     global currentType
     global currentSol
     if currentSymTab.search(p[-1]) is None:
-        currentSymTab.add(p[-1], currentType, None)
+        virtual_address = executionBlock.availParameters(currentType)
+        if virtual_address is None:
+            p_error_exceeded_memory_capability(p)
+        currentSymTab.add(p[-1], currentType, virtual_address)
         funDir.append_parameter(currentSol, currentType)
     else:
         p_error_duplicate_param(p[-1])
@@ -904,7 +1070,7 @@ def p_z(p):
 
 def p_main_definition(p):
     '''
-    MAIN_DEFINITION : INT store_type MAIN_R check_sol_duplicates L_PAREN R_PAREN COLON S_BLOCK TICK update_fun print_currentSymTab
+    MAIN_DEFINITION : INT store_type MAIN_R check_sol_duplicates L_PAREN R_PAREN COLON S_BLOCK TICK update_fun print_currentSymTab free_symbol_table reset_execution_block
     '''
     print(quadQueue)
     print("******************************************************************")
@@ -914,7 +1080,7 @@ def p_main_definition(p):
 
 def p_draw_circle(p):
     '''
-    DRAW_CIRCLE : DRAW_CIRCLE_R L_PAREN EXPRESSION COMMA EXPRESSION COMMA EXPRESSION R_PAREN
+    DRAW_CIRCLE : DRAW_CIRCLE_R L_PAREN S_EXPRESSION COMMA S_EXPRESSION COMMA S_EXPRESSION R_PAREN
     '''
     p[0] = 'drawCircle'
 
@@ -922,7 +1088,7 @@ def p_draw_circle(p):
 
 def p_draw_line(p):
     '''
-    DRAW_LINE : DRAW_LINE_R L_PAREN EXPRESSION COMMA EXPRESSION COMMA EXPRESSION COMMA EXPRESSION R_PAREN
+    DRAW_LINE : DRAW_LINE_R L_PAREN S_EXPRESSION COMMA S_EXPRESSION COMMA S_EXPRESSION COMMA S_EXPRESSION R_PAREN
     '''
     p[0] = 'drawLine'
 
@@ -930,7 +1096,7 @@ def p_draw_line(p):
 
 def p_draw_rectangle(p):
     '''
-    DRAW_RECTANGLE : DRAW_RECTANGLE_R L_PAREN EXPRESSION COMMA EXPRESSION COMMA EXPRESSION R_PAREN
+    DRAW_RECTANGLE : DRAW_RECTANGLE_R L_PAREN S_EXPRESSION COMMA S_EXPRESSION COMMA S_EXPRESSION R_PAREN
     '''
     p[0] = 'drawRectangle'
 
@@ -938,7 +1104,7 @@ def p_draw_rectangle(p):
 
 def p_move_up(p):
     '''
-    MOVE_UP : MOVE_UP_R L_PAREN EXPRESSION R_PAREN
+    MOVE_UP : MOVE_UP_R L_PAREN S_EXPRESSION R_PAREN
     '''
     p[0] = 'moveUp'
 
@@ -946,7 +1112,7 @@ def p_move_up(p):
 
 def p_move_right(p):
     '''
-    MOVE_RIGHT : MOVE_RIGHT_R L_PAREN EXPRESSION R_PAREN
+    MOVE_RIGHT : MOVE_RIGHT_R L_PAREN S_EXPRESSION R_PAREN
     '''
     p[0] = 'moveRight'
 
@@ -954,7 +1120,7 @@ def p_move_right(p):
 
 def p_move_down(p):
     '''
-    MOVE_DOWN : MOVE_DOWN_R L_PAREN EXPRESSION R_PAREN
+    MOVE_DOWN : MOVE_DOWN_R L_PAREN S_EXPRESSION R_PAREN
     '''
     p[0] = 'moveDown'
 
@@ -962,7 +1128,7 @@ def p_move_down(p):
 
 def p_move_left(p):
     '''
-    MOVE_LEFT : MOVE_LEFT_R L_PAREN EXPRESSION R_PAREN
+    MOVE_LEFT : MOVE_LEFT_R L_PAREN S_EXPRESSION R_PAREN
     '''
     p[0] = 'moveLeft'
 
@@ -970,7 +1136,7 @@ def p_move_left(p):
 
 def p_print(p):
     '''
-    PRINT : PRINT_R L_PAREN EXPRESSION R_PAREN
+    PRINT : PRINT_R L_PAREN S_EXPRESSION R_PAREN
     '''
     p[0] = 'print'
 
@@ -1069,14 +1235,6 @@ def p_error_unidentified_constant(p):
     print('Constant ' + p + ' is not identified.')
     sys.exit()
 
-# Error-handling function for sign type mismatch
-def p_error_sign_type_mismatch(p):
-    '''
-    '''
-    print('Error!')
-    print('Trying to enforce a sign to a non-number value.')
-    sys.exit()
-
 # Error-handling function for type mismatch
 def p_error_type_mismatch(p):
     '''
@@ -1101,6 +1259,37 @@ def p_error_return_type_mismatch(p):
     print('Return type mismatch!')
     sys.exit()
 
+# Error-handling function for argument type mismatch
+def p_error_argument_type_mismatch(p):
+    '''
+    '''
+    print('Error!')
+    print('Argument type mismatch!')
+    sys.exit()
+
+# Error-handling function for more parameters than expected in solution call
+def p_error_more_parameters_than_expected(p):
+    '''
+    '''
+    print('Error!')
+    print('More parameters than expected in solution call!')
+    sys.exit()
+
+# Error-handling function for less parameters than expected in solution call
+def p_error_less_parameters_than_expected(p):
+    '''
+    '''
+    print('Error!')
+    print('Less parameters than expected in solution call!')
+    sys.exit()
+
+# Error-handling function for exceeded memory capability
+def p_error_exceeded_memory_capability(p):
+    '''
+    '''
+    print('Error!')
+    print('Exceeded memory capability!')
+    sys.exit()
 
 # se contruye el parser
 parser = yacc.yacc()
@@ -1122,7 +1311,7 @@ input = ' '.join(lines)
 print input
 '''
 
-with open('../testing/success_test.txt', 'r') as myfile:
+with open('../testing/prueba.txt', 'r') as myfile:
     data = myfile.read()
 
 #with open('../testing/failure_test.txt', 'r') as myfile:

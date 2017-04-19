@@ -20,6 +20,10 @@ class functionDirectory:
     # key: name value: [type, (paramType1, paramType2, paramTypeN), symbolTable, [numIntParam, numFloatParam,
     #                   numStringParam, numCharParam, numBoolParam], [numLocalInt, numLocalFloat, numLocalString,
     #                   numLocalChar, numLocalBool], [numTempInt, numTempFloat, numTempString, numTempChar,
+    #                   numTempBool], currentQuadCount] or
+    # key: name value: [type, (paramType1, paramType2, paramTypeN), symbolTable, [numIntConst, numFloatConst,
+    #                   numStringConst, numCharConst, numBoolConst], [numGlobalInt, numGlobalFloat, numGlobalString,
+    #                   numGlobalChar, numGlobalBool], [numTempInt, numTempFloat, numTempString, numTempChar,
     #                   numTempBool], currentQuadCount]
     functionDic = {}
 
@@ -60,9 +64,17 @@ class functionDirectory:
     def update_number_of_param_variables(self, name, numParamDefined):
         self.functionDic[name][3] = numParamDefined
 
+    # Method to update the list of number of constants used of each data type
+    def update_number_of_constants(self, name, numConstUsed):
+        self.functionDic[name][3] = numConstUsed
+
     # Method to update the list of number of local variables defined of each data type
     def update_number_of_local_variables(self, name, numLocalVarsDefined):
         self.functionDic[name][4] = numLocalVarsDefined
+
+    # Method to update the list of number of global variables defined of each data type
+    def update_number_of_global_variables(self, name, numGlobalVarsDefined):
+        self.functionDic[name][4] = numGlobalVarsDefined
 
     # Method to update the list of number of temporal variables defined of each data type
     def update_number_of_temp_variables(self, name, numTempVarsDefined):
