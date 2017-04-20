@@ -51,8 +51,22 @@ executionBlock = executionBlock()
 
 def p_program(p):
     '''
-    program : PROGRAM ID create_global_fun COLON VAR_BLOCK update_global_fun print_currentSymTab SOLS COLON SOL_DEFINITIONS MAIN_DEFINITION update_constant_number free_symbol_table print_funDir
+    program : PROGRAM ID create_global_fun COLON VAR_BLOCK update_global_fun generate_go_to_main_quad print_currentSymTab SOLS COLON SOL_DEFINITIONS MAIN_DEFINITION update_constant_number free_symbol_table print_funDir
     '''
+
+def p_generate_go_to_main_quad(p):
+    '''
+    generate_go_to_main_quad :
+    '''
+    PJumps.append(quadQueue.count())
+    quadQueue.add('GOSUB', 'main', None, None)
+
+def p_update_go_to_main_quad(p):
+    '''
+    update_go_to_main_quad :
+    '''
+    quad_to_modify = PJumps.pop()
+    quadQueue.append_jump(quad_to_modify, funDir.search('main')[6])
 
 def p_print_funDir(p):
     '''
@@ -1046,6 +1060,7 @@ def p_s_expression(p):
 def p_params(p):
     '''
     PARAMS : TYPE store_type ID check_param_duplicates update_param_count Y
+    | empty
     '''
 
 def p_check_param_duplicates(p):
@@ -1094,38 +1109,56 @@ def p_z(p):
 
 def p_main_definition(p):
     '''
-    MAIN_DEFINITION : INT store_type MAIN_R check_sol_duplicates L_PAREN R_PAREN COLON S_BLOCK TICK update_fun print_currentSymTab free_symbol_table reset_execution_block
+    MAIN_DEFINITION : INT store_type MAIN_R check_sol_duplicates L_PAREN R_PAREN COLON S_BLOCK TICK update_fun print_currentSymTab free_symbol_table reset_execution_block update_go_to_main_quad
     '''
+    global programID
     print('\n')
     print(quadQueue)
     print("******************************************************************")
-    virMachine = virtualMachine(quadQueue)
+    virMachine = virtualMachine(quadQueue, mainMemory, funDir, programID)
     print("******************************************************************")
-    print(mainMemory)
 
 #-------------------------------------------------------------
 
 def p_draw_circle(p):
     '''
-    DRAW_CIRCLE : DRAW_CIRCLE_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument R_PAREN end_draw_argument_processing
+    DRAW_CIRCLE : DRAW_CIRCLE_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument R_PAREN end_draw_argument_processing generate_exec_draw_circle_quad
     '''
     p[0] = 'drawCircle'
+
+def p_generate_exec_draw_circle_quad(p):
+    '''
+    generate_exec_draw_circle_quad :
+    '''
+    quadQueue.add('EXEC', 'DRAW_CIRCLE', None, None)
 
 #-------------------------------------------------------------
 
 def p_draw_line(p):
     '''
-    DRAW_LINE : DRAW_LINE_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument R_PAREN end_draw_argument_processing
+    DRAW_LINE : DRAW_LINE_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument R_PAREN end_draw_argument_processing generate_exec_draw_line_quad
     '''
     p[0] = 'drawLine'
+
+def p_generate_exec_draw_line_quad(p):
+    '''
+    generate_exec_draw_line_quad :
+    '''
+    quadQueue.add('EXEC', 'DRAW_LINE', None, None)
 
 #-------------------------------------------------------------
 
 def p_draw_rectangle(p):
     '''
-    DRAW_RECTANGLE : DRAW_RECTANGLE_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument R_PAREN end_draw_argument_processing
+    DRAW_RECTANGLE : DRAW_RECTANGLE_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument R_PAREN end_draw_argument_processing generate_exec_draw_rectangle_quad
     '''
     p[0] = 'drawRectangle'
+
+def p_generate_exec_draw_rectangle_quad(p):
+    '''
+    generate_exec_draw_rectangle_quad :
+    '''
+    quadQueue.add('EXEC', 'DRAW_RECTANGLE', None, None)
 
 def p_process_draw_argument(p):
     '''
@@ -1151,33 +1184,57 @@ def p_end_draw_argument_processing(p):
 
 def p_move_up(p):
     '''
-    MOVE_UP : MOVE_UP_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_move_argument R_PAREN
+    MOVE_UP : MOVE_UP_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_move_argument R_PAREN generate_exec_move_up_quad
     '''
     p[0] = 'moveUp'
+
+def p_generate_exec_move_up_quad(p):
+    '''
+    generate_exec_move_up_quad :
+    '''
+    quadQueue.add('EXEC', 'MOVE_UP', None, None)
 
 #-------------------------------------------------------------
 
 def p_move_right(p):
     '''
-    MOVE_RIGHT : MOVE_RIGHT_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_move_argument R_PAREN
+    MOVE_RIGHT : MOVE_RIGHT_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_move_argument R_PAREN generate_exec_move_right_quad
     '''
     p[0] = 'moveRight'
+
+def p_generate_exec_move_right_quad(p):
+    '''
+    generate_exec_move_right_quad :
+    '''
+    quadQueue.add('EXEC', 'MOVE_RIGHT', None, None)
 
 #-------------------------------------------------------------
 
 def p_move_down(p):
     '''
-    MOVE_DOWN : MOVE_DOWN_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_move_argument R_PAREN
+    MOVE_DOWN : MOVE_DOWN_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_move_argument R_PAREN generate_exec_move_down_quad
     '''
     p[0] = 'moveDown'
+
+def p_generate_exec_move_down_quad(p):
+    '''
+    generate_exec_move_down_quad :
+    '''
+    quadQueue.add('EXEC', 'MOVE_DOWN', None, None)
 
 #-------------------------------------------------------------
 
 def p_move_left(p):
     '''
-    MOVE_LEFT : MOVE_LEFT_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_move_argument R_PAREN
+    MOVE_LEFT : MOVE_LEFT_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_move_argument R_PAREN generate_exec_move_left_quad
     '''
     p[0] = 'moveLeft'
+
+def p_generate_exec_move_left_quad(p):
+    '''
+    generate_exec_move_left_quad :
+    '''
+    quadQueue.add('EXEC', 'MOVE_LEFT', None, None)
 
 def p_process_move_argument(p):
     '''
@@ -1194,9 +1251,15 @@ def p_process_move_argument(p):
 
 def p_print(p):
     '''
-    PRINT : PRINT_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_print_argument R_PAREN
+    PRINT : PRINT_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_print_argument R_PAREN generate_exec_print_quad
     '''
     p[0] = 'print'
+
+def p_generate_exec_print_quad(p):
+    '''
+    generate_exec_print_quad :
+    '''
+    quadQueue.add('EXEC', 'PRINT', None, None)
 
 def p_process_print_argument(p):
     '''

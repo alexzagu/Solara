@@ -52,6 +52,34 @@ class executionBlock:
 
     # Method definitions
 
+    # Get value method
+    def get_value(self, virtual_address):
+        if virtual_address >= self.parametersMIN and virtual_address <= self.parametersMAX:
+            return self.parameters.get_value(virtual_address - self.parametersMIN)
+
+        elif virtual_address >= self.temporalMIN and virtual_address <= self.temporalMAX:
+            return self.temporal.get_value(virtual_address - self.temporalMIN)
+
+        elif virtual_address >= self.localMIN and virtual_address <= self.localMAX:
+            return self.local.get_value(virtual_address - self.localMIN)
+
+        else:
+            return None
+
+    # Set value method
+    def set_value(self, virtual_address, value):
+        if virtual_address >= self.parametersMIN and virtual_address <= self.parametersMAX:
+            return self.parameters.set_value(virtual_address - self.parametersMIN, value)
+
+        elif virtual_address >= self.temporalMIN and virtual_address <= self.temporalMAX:
+            return self.temporal.set_value(virtual_address - self.temporalMIN, value)
+
+        elif virtual_address >= self.localMIN and virtual_address <= self.localMAX:
+            return self.local.set_value(virtual_address - self.localMIN, value)
+
+        else:
+            return None
+
     # AVAIL for parameters method
     def availParameters(self, type):
         virtual_address = self.parameters.avail(type)
@@ -84,14 +112,14 @@ class executionBlock:
 
     # Memory allocation method
     def malloc(self, listP, listL, listT):
-        for x in listP:
-            for y in listP[x]:
-                self.parameters.save(None, x, None)
+        for type in range(0, 5):
+            for index in range(0, listP[type]):
+                self.parameters.save(None, type, None)
 
-        for x in listL:
-            for y in listL[x]:
-                self.local.save(None, x, None)
+        for type in range(0, 5):
+            for index in range(0, listL[type]):
+                self.local.save(None, type, None)
 
-        for x in listT:
-            for y in listT[x]:
-                self.temporal.save(None, x, None)
+        for type in range(0, 5):
+            for index in range(0, listT[type]):
+                self.temporal.save(None, type, None)
