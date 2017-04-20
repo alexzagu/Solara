@@ -30,6 +30,7 @@ class quadQueue:
     def __str__(self):
         lines = []
         count = 0
+        lines.append('Generated quads:')
         for item in self.quadList:
             lines.append(str(count) + ': ' + str(item[0]) + ', ' + str(item[1]) + ', ' + str(item[2]) + ', ' + \
                          str(item[3]))
@@ -39,6 +40,7 @@ class quadQueue:
     def __unicode__(self):
         lines = []
         count = 0
+        lines.append('Generated quads:')
         for item in self.quadList:
             lines.append(str(count) + ': ' + str(item[0]) + ', ' + str(item[1]) + ', ' + str(item[2]) + ', ' + \
                          str(item[3]))

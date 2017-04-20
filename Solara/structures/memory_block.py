@@ -21,6 +21,7 @@ class memoryBlock:
         self.memBlock = [[], [], [], [], []]
 
     # Initializing ranges
+
     intMAX = 4999
     floatMAX = 9999
     stringMAX = 14999
@@ -34,11 +35,28 @@ class memoryBlock:
     boolMIN = 20000
 
     # stringTo methods
+
     def __str__(self):
-        return ""
+        lines = []
+        lines.append('[')
+        for range in self.memBlock:
+            lines.append('  [')
+            for unit in range:
+                lines.append('      ' + str(unit))
+            lines.append('  ]')
+        lines.append(']')
+        return '\n'.join(lines)
 
     def __unicode__(self):
-        return ""
+        lines = []
+        lines.append('[')
+        for range in self.memBlock:
+            lines.append('  [')
+            for unit in range:
+                lines.append('      ' + str(unit))
+            lines.append('  ]')
+        lines.append(']')
+        return '\n'.join(lines)
 
     # Method definitions
 
@@ -89,10 +107,10 @@ class memoryBlock:
             return self.memBlock[2][virtual_address - self.stringMIN].get_value
 
         elif self.charMIN <= virtual_address <= self.charMAX:
-            return self.memBlock[4][virtual_address - self.charMIN].get_value
+            return self.memBlock[3][virtual_address - self.charMIN].get_value
 
         elif self.boolMIN <= virtual_address <= self.boolMAX:
-            return self.memBlock[3][virtual_address - self.boolMIN].get_value
+            return self.memBlock[4][virtual_address - self.boolMIN].get_value
 
         else:
             return None
@@ -119,6 +137,36 @@ class memoryBlock:
             self.countBool += 1
             return self.boolMIN + (self.countBool - 1)
 
+        else:
+            return None
+
+    # Search method
+    def search(self, value, type):
+        if type == 0:
+            for index in range(0, len(self.memBlock[0])):
+                if self.memBlock[0][index].value == value:
+                    return self.intMIN + index
+            return None
+        elif type == 1:
+            for index in range(0, len(self.memBlock[1])):
+                if self.memBlock[1][index].value == value:
+                    return self.floatMIN + index
+            return None
+        elif type == 2:
+            for index in range(0, len(self.memBlock[2])):
+                if self.memBlock[2][index].value == value:
+                    return self.stringMIN + index
+            return None
+        elif type == 3:
+            for index in range(0, len(self.memBlock[3])):
+                if self.memBlock[3][index].value == value:
+                    return self.charMIN + index
+            return None
+        elif type == 4:
+            for index in range(0, len(self.memBlock[4])):
+                if self.memBlock[4][index].value == value:
+                    return self.boolMIN + index
+            return None
         else:
             return None
 

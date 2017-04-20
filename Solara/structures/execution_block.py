@@ -16,27 +16,65 @@ class executionBlock:
         self.local = memoryBlock()
         self.temporal = memoryBlock()
 
+    # Initializing ranges
+
+    parametersMIN = 100000
+    temporalMIN = 50000
+    localMIN = 25000
+
+    parametersMAX = 124999
+    temporalMAX = 74999
+    localMAX = 49999
+
     # stringTo methods
 
     def __str__(self):
-        return ""
+        lines = []
+        lines.append('Execution Block:')
+        lines.append('Parameters:')
+        lines.append(str(self.parameters))
+        lines.append('Local:')
+        lines.append(str(self.local))
+        lines.append('Temporal:')
+        lines.append(str(self.temporal))
+        return '\n'.join(lines)
 
     def __unicode__(self):
-        return ""
+        lines = []
+        lines.append('Execution Block:')
+        lines.append('Parameters:')
+        lines.append(str(self.parameters))
+        lines.append('Local:')
+        lines.append(str(self.local))
+        lines.append('Temporal:')
+        lines.append(str(self.temporal))
+        return '\n'.join(lines)
 
     # Method definitions
 
     # AVAIL for parameters method
     def availParameters(self, type):
-        return self.parameters.avail(type)
+        virtual_address = self.parameters.avail(type)
+        if not virtual_address is None:
+            return virtual_address + self.parametersMIN
+        else:
+            return None
 
     # AVAIL for local method
     def availLocal(self, type):
-        return self.local.avail(type)
+        virtual_address = self.local.avail(type)
+        if not virtual_address is None:
+            return virtual_address + self.localMIN
+        else:
+            return None
 
     # AVAIL for temporal method
     def availTemporal(self, type):
-        return self.temporal.avail(type)
+        virtual_address = self.temporal.avail(type)
+        if not virtual_address is None:
+            return virtual_address + self.temporalMIN
+        else:
+            return None
 
     # Clear method
     def clear(self):
