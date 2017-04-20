@@ -20,6 +20,8 @@ class memoryBlock:
         self.countChar = 0
         self.memBlock = [[], [], [], [], []]
 
+    # Class variables
+
     # Initializing ranges
 
     intMAX = 4999
@@ -33,6 +35,9 @@ class memoryBlock:
     stringMIN = 10000
     charMIN = 15000
     boolMIN = 20000
+
+    # Trash values for default assignation
+    trash_values = [0, 0.0, "", '', False]
 
     # stringTo methods
 
@@ -63,7 +68,10 @@ class memoryBlock:
     # Save method
     def save(self, value, type, next):
         tempMemUnit = memoryUnit()
-        tempMemUnit.set_value(value)
+        if value is None:
+            tempMemUnit.set_value(self.trash_values[type])
+        else:
+            tempMemUnit.set_value(value)
         tempMemUnit.set_next(next)
 
         if type == 0 and self.countInt <= self.intMAX:
@@ -97,20 +105,40 @@ class memoryBlock:
     # Get value method
     def get_value(self, virtual_address):
 
-        if self.intMIN <= virtual_address <= self.intMAX:
-            return self.memBlock[0][virtual_address].get_value
+        if virtual_address >= self.intMIN and virtual_address <= self.intMAX:
+            return self.memBlock[0][virtual_address].get_value()
 
-        elif self.floatMIN <= virtual_address <= self.floatMAX:
-            return self.memBlock[1][virtual_address - self.floatMIN].get_value
+        elif virtual_address >= self.floatMIN and virtual_address <= self.floatMAX:
+            return self.memBlock[1][virtual_address - self.floatMIN].get_value()
 
-        elif self.stringMIN <= virtual_address <= self.stringMAX:
-            return self.memBlock[2][virtual_address - self.stringMIN].get_value
+        elif virtual_address >= self.stringMIN and virtual_address <= self.stringMAX:
+            return self.memBlock[2][virtual_address - self.stringMIN].get_value()
 
-        elif self.charMIN <= virtual_address <= self.charMAX:
-            return self.memBlock[3][virtual_address - self.charMIN].get_value
+        elif virtual_address >= self.charMIN and virtual_address <= self.charMAX:
+            return self.memBlock[3][virtual_address - self.charMIN].get_value()
 
-        elif self.boolMIN <= virtual_address <= self.boolMAX:
-            return self.memBlock[4][virtual_address - self.boolMIN].get_value
+        elif virtual_address >= self.boolMIN and virtual_address <= self.boolMAX:
+            return self.memBlock[4][virtual_address - self.boolMIN].get_value()
+
+        else:
+            return None
+
+    # Set value method
+    def set_value(self, virtual_address, value):
+        if virtual_address >= self.intMIN and virtual_address <= self.intMAX:
+            return self.memBlock[0][virtual_address].set_value(value)
+
+        elif virtual_address >= self.floatMIN and virtual_address <= self.floatMAX:
+            return self.memBlock[1][virtual_address - self.floatMIN].set_value(value)
+
+        elif virtual_address >= self.stringMIN and virtual_address <= self.stringMAX:
+            return self.memBlock[2][virtual_address - self.stringMIN].set_value(value)
+
+        elif virtual_address >= self.charMIN and virtual_address <= self.charMAX:
+            return self.memBlock[3][virtual_address - self.charMIN].set_value(value)
+
+        elif virtual_address >= self.boolMIN and virtual_address <= self.boolMAX:
+            return self.memBlock[4][virtual_address - self.boolMIN].set_value(value)
 
         else:
             return None

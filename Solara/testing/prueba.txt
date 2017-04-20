@@ -3,21 +3,24 @@ program Success:
 @ Success test program.
 
 VARS:
+    int A = 5~
 SOLS:
     int main():
     {
-        int A = 5~
+        int A = 10~
         float B = 5.5~
+        string C = "Hello World!"~
 
-        if A > 5:
+        if A > 10:
         {
-            print(A)~
-            moveUp(A)~
-            moveDown(A)~
-            moveRight(A)~
-            moveLeft(A)~
-            drawRectangle(A, A, A, A)~
-            drawLine(A, A, A, A)~
-            drawCircle(A, A, A)~
+            print("True!")~
+        }
+        else:
+        {
+            print("Not true!")~
         }~
+
+        print(A)~
+        print(B)~
+        print("Blah")~
     }~

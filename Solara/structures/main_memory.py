@@ -52,6 +52,34 @@ class mainMemory:
 
     # Method definitions
 
+    # Get value method
+    def get_value(self, virtual_address):
+        if virtual_address >= self.globalMIN and virtual_address <= self.globalMAX:
+            return self.globals.get_value(virtual_address - self.globalMIN)
+
+        elif virtual_address >= self.temporalMIN and virtual_address <= self.temporalMAX:
+            return self.temporal.get_value(virtual_address - self.temporalMIN)
+
+        elif virtual_address >= self.constantsMIN and virtual_address <= self.constantsMAX:
+            return self.constants.get_value(virtual_address - self.constantsMIN)
+
+        else:
+            return None
+
+    # Set value method
+    def set_value(self, virtual_address, value):
+        if virtual_address >= self.globalMIN and virtual_address <= self.globalMAX:
+            return self.globals.set_value(virtual_address - self.globalMIN, value)
+
+        elif virtual_address >= self.temporalMIN and virtual_address <= self.temporalMAX:
+            return self.temporal.set_value(virtual_address - self.temporalMIN, value)
+
+        elif virtual_address >= self.constantsMIN and virtual_address <= self.constantsMAX:
+            return self.constants.set_value(virtual_address - self.constantsMIN, value)
+
+        else:
+            return None
+
     # AVAIL for globals method
     def availGlobals(self, type):
         virtual_address = self.globals.avail(type)
@@ -83,18 +111,14 @@ class mainMemory:
         self.constants.clear()
 
     # Memory allocation method
-    def malloc(self, listG, listT, listC):
-        for x in listG:
-            for y in listG[x]:
-                self.globals.save(None, x, None)
+    def malloc(self, listG, listT):
+        for type in range(0, 5):
+            for index in range(0, listG[type]):
+                self.globals.save(None, type, None)
 
-        for x in listT:
-            for y in listT[x]:
-                self.temporal.save(None, x, None)
-
-        for x in listC:
-            for y in listC[x]:
-                self.constants.save(None, x, None)
+        for type in range(0, 5):
+            for index in range(0, listT[type]):
+                self.temporal.save(None, type, None)
 
     # Save constant method
     def saveConstant(self, value, type):
@@ -111,3 +135,14 @@ class mainMemory:
             return virtual_address + self.constantsMIN
         else:
             return None
+
+    # Is virtual address global or constant or none
+    def is_virtual_address_global_or_constant(self, virtual_address):
+        if virtual_address >= self.globalMIN and virtual_address <= self.globalMAX:
+            return True
+
+        elif virtual_address >= self.constantsMIN and virtual_address <= self.constantsMAX:
+            return True
+
+        else:
+            return False
