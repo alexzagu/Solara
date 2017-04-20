@@ -16,12 +16,13 @@ class memoryUnit:
 
     # stringTo methods
     def __str__(self):
-        return ""
+        return ('[' + str(self.value) + ', ' + str(self.next) + ']')
 
     def __unicode__(self):
-        return ""
+        return ('[' + str(self.value) + ', ' + str(self.next) + ']')
 
     # Method definitions
+
     def get_value(self):
         return self.value
 

@@ -184,9 +184,19 @@ def p_update_local_count(p):
 
 def p_b(p):
     '''
-    B : EQUALS C assign_var_value
+    B : EQUALS append_left_operand append_equals C assign_var_value
     | empty
     '''
+
+def p_append_left_operand(p):
+    '''
+    append_left_operand :
+    '''
+    global currentSymTab
+    global currentType
+    global currentVar
+    POperands.append(currentSymTab.search(currentVar)[1])
+    PTypes.append(currentType)
 
 def p_assign_var_value(p):
     '''
@@ -199,7 +209,7 @@ def p_assign_var_value(p):
 
 def p_c(p):
     '''
-    C : S_EXPRESSION
+    C : S_EXPRESSION process_assignation_operation
     | LIST_EXP
     '''
 
@@ -580,28 +590,42 @@ def p_con_var_terminal(p):
     string_r = re.compile(t_STRING_CONT)
     char_r = re.compile(t_CHAR_CONT)
     float_r = re.compile(t_FLOAT_CONT)
+    value = None
+    type = None
     if p[1] == 'true' or p[1] == 'false':
-        POperands.append(p[1] == 'true')
-        PTypes.append(4)
+        value = (p[1] == 'true')
+        type = 4
         numConstUsed[4] = numConstUsed[4] + 1
     elif float_r.match(p[1]):
-        POperands.append(float(p[1]))
-        PTypes.append(1)
+        value = float(p[1])
+        type = 1
         numConstUsed[1] = numConstUsed[1] + 1
     elif int_r.match(p[1]):
-        POperands.append(int(p[1]))
-        PTypes.append(0)
+        value = int(p[1])
+        type = 0
         numConstUsed[0] = numConstUsed[0] + 1
     elif string_r.match(p[1]):
-        POperands.append(p[1])
-        PTypes.append(2)
+        value = p[1]
+        type = 2
         numConstUsed[2] = numConstUsed[2] + 1
     elif char_r.match(p[1]):
-        POperands.append(p[1])
-        PTypes.append(3)
+        value = p[1]
+        type = 3
         numConstUsed[3] = numConstUsed[3] + 1
     else:
         p_error_unidentified_constant(p)
+
+    if mainMemory.searchConstants(value, type) is None:
+        virtual_address = mainMemory.saveConstant(value, type)
+
+        if virtual_address is None:
+            p_error_exceeded_memory_capability(p)
+
+        POperands.append(virtual_address)
+        PTypes.append(type)
+    else:
+        POperands.append(mainMemory.searchConstants(value, type))
+        PTypes.append(type)
 
 #-------------------------------------------------------------
 
@@ -732,7 +756,7 @@ def p_append_equals(p):
     '''
     append_equals :
     '''
-    POperators.append(p[-1])
+    POperators.append('=')
 
 def p_process_assignation_operation(p):
     '''
@@ -1072,15 +1096,18 @@ def p_main_definition(p):
     '''
     MAIN_DEFINITION : INT store_type MAIN_R check_sol_duplicates L_PAREN R_PAREN COLON S_BLOCK TICK update_fun print_currentSymTab free_symbol_table reset_execution_block
     '''
+    print('\n')
     print(quadQueue)
     print("******************************************************************")
     virMachine = virtualMachine(quadQueue)
+    print("******************************************************************")
+    print(mainMemory)
 
 #-------------------------------------------------------------
 
 def p_draw_circle(p):
     '''
-    DRAW_CIRCLE : DRAW_CIRCLE_R L_PAREN S_EXPRESSION COMMA S_EXPRESSION COMMA S_EXPRESSION R_PAREN
+    DRAW_CIRCLE : DRAW_CIRCLE_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument R_PAREN end_draw_argument_processing
     '''
     p[0] = 'drawCircle'
 
@@ -1088,7 +1115,7 @@ def p_draw_circle(p):
 
 def p_draw_line(p):
     '''
-    DRAW_LINE : DRAW_LINE_R L_PAREN S_EXPRESSION COMMA S_EXPRESSION COMMA S_EXPRESSION COMMA S_EXPRESSION R_PAREN
+    DRAW_LINE : DRAW_LINE_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument R_PAREN end_draw_argument_processing
     '''
     p[0] = 'drawLine'
 
@@ -1096,15 +1123,35 @@ def p_draw_line(p):
 
 def p_draw_rectangle(p):
     '''
-    DRAW_RECTANGLE : DRAW_RECTANGLE_R L_PAREN S_EXPRESSION COMMA S_EXPRESSION COMMA S_EXPRESSION R_PAREN
+    DRAW_RECTANGLE : DRAW_RECTANGLE_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument COMMA S_EXPRESSION process_draw_argument R_PAREN end_draw_argument_processing
     '''
     p[0] = 'drawRectangle'
+
+def p_process_draw_argument(p):
+    '''
+    process_draw_argument :
+    '''
+    global param_counter
+    param_counter = param_counter + 1
+    argument = POperands.pop()
+    argument_type = PTypes.pop()
+    if argument_type in [0, 1]:
+        quadQueue.add('PARAMETER', argument, None, param_counter)
+    else:
+        p_error_argument_type_mismatch(p)
+
+def p_end_draw_argument_processing(p):
+    '''
+    end_draw_argument_processing :
+    '''
+    global param_counter
+    param_counter = -1
 
 #-------------------------------------------------------------
 
 def p_move_up(p):
     '''
-    MOVE_UP : MOVE_UP_R L_PAREN S_EXPRESSION R_PAREN
+    MOVE_UP : MOVE_UP_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_move_argument R_PAREN
     '''
     p[0] = 'moveUp'
 
@@ -1112,7 +1159,7 @@ def p_move_up(p):
 
 def p_move_right(p):
     '''
-    MOVE_RIGHT : MOVE_RIGHT_R L_PAREN S_EXPRESSION R_PAREN
+    MOVE_RIGHT : MOVE_RIGHT_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_move_argument R_PAREN
     '''
     p[0] = 'moveRight'
 
@@ -1120,7 +1167,7 @@ def p_move_right(p):
 
 def p_move_down(p):
     '''
-    MOVE_DOWN : MOVE_DOWN_R L_PAREN S_EXPRESSION R_PAREN
+    MOVE_DOWN : MOVE_DOWN_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_move_argument R_PAREN
     '''
     p[0] = 'moveDown'
 
@@ -1128,17 +1175,60 @@ def p_move_down(p):
 
 def p_move_left(p):
     '''
-    MOVE_LEFT : MOVE_LEFT_R L_PAREN S_EXPRESSION R_PAREN
+    MOVE_LEFT : MOVE_LEFT_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_move_argument R_PAREN
     '''
     p[0] = 'moveLeft'
+
+def p_process_move_argument(p):
+    '''
+    process_move_argument :
+    '''
+    argument = POperands.pop()
+    argument_type = PTypes.pop()
+    if argument_type in [0, 1]:
+        quadQueue.add('PARAMETER', argument, None, 0)
+    else:
+        p_error_argument_type_mismatch(p)
 
 #-------------------------------------------------------------
 
 def p_print(p):
     '''
-    PRINT : PRINT_R L_PAREN S_EXPRESSION R_PAREN
+    PRINT : PRINT_R generate_predefined_sol_quad L_PAREN S_EXPRESSION process_print_argument R_PAREN
     '''
     p[0] = 'print'
+
+def p_process_print_argument(p):
+    '''
+    process_print_argument :
+    '''
+    argument = POperands.pop()
+    argument_type = PTypes.pop()
+    if argument_type in [0, 1, 2, 3, 4]:
+        quadQueue.add('PARAMETER', argument, None, 0)
+    else:
+        p_error_argument_type_mismatch(p)
+
+def p_generate_predefined_sol_quad(p):
+    '''
+    generate_predefined_sol_quad :
+    '''
+    if p[-1] == 'print':
+        quadQueue.add('PRINT', None, None, None)
+    elif p[-1] == 'moveLeft':
+        quadQueue.add('MOVE_LEFT', None, None, None)
+    elif p[-1] == 'moveRight':
+        quadQueue.add('MOVE_RIGHT', None, None, None)
+    elif p[-1] == 'moveDown':
+        quadQueue.add('MOVE_DOWN', None, None, None)
+    elif p[-1] == 'moveUp':
+        quadQueue.add('MOVE_UP', None, None, None)
+    elif p[-1] == 'drawRectangle':
+        quadQueue.add('DRAW_RECTANGLE', None, None, None)
+    elif p[-1] == 'drawLine':
+        quadQueue.add('DRAW_LINE', None, None, None)
+    else:
+        quadQueue.add('DRAW_CIRCLE', None, None, None)
 
 #-------------------------------------------------------------
 

@@ -7,9 +7,17 @@ SOLS:
     int main():
     {
         int A = 5~
+        float B = 5.5~
 
         if A > 5:
         {
             print(A)~
+            moveUp(A)~
+            moveDown(A)~
+            moveRight(A)~
+            moveLeft(A)~
+            drawRectangle(A, A, A, A)~
+            drawLine(A, A, A, A)~
+            drawCircle(A, A, A)~
         }~
     }~
