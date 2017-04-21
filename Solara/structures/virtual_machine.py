@@ -7,6 +7,7 @@
 # ------------------------------------------------------------
 import sys
 from structures.execution_block import executionBlock
+from turtle import *
 
 class virtualMachine:
 
@@ -16,7 +17,9 @@ class virtualMachine:
         self.funDir = funDir
         self.mainMemory.malloc(self.funDir.search(programID)[4], self.funDir.search(programID)[5])
         print(self.mainMemory)
+        self.pen = self.turtle_setup()
         self.execute(quadQueue.quadList)
+        self.pen.getscreen()._root.mainloop()
 
     # Class variables
     currentParameters = []
@@ -30,6 +33,12 @@ class virtualMachine:
 
     def __unicode__(self):
         return ""
+
+    def turtle_setup(self):
+        pen = Pen()
+        pen.screen.bgcolor('#94B3C6')
+        pen.color('#f4425c')
+        return pen
 
     def is_virtual_address_global(self, virtual_address):
         if self.mainMemory.is_virtual_address_global_or_constant(virtual_address):
@@ -394,7 +403,43 @@ class virtualMachine:
 
             # EXEC operation
             elif quadList[index][0] == "EXEC":
-                print(self.currentParameters[0])
+                if quadList[index][1] == "PRINT":
+                    print(self.currentParameters[0])
+                elif quadList[index][1] == "MOVE_UP":
+                    self.pen.up()
+                    self.pen.sety(self.currentParameters[0])
+                    self.pen.down()
+                elif quadList[index][1] == "MOVE_DOWN":
+                    self.pen.up()
+                    self.pen.sety(self.currentParameters[0])
+                    self.pen.down()
+                elif quadList[index][1] == "MOVE_RIGHT":
+                    self.pen.up()
+                    self.pen.setx(self.currentParameters[0])
+                    self.pen.down()
+                elif quadList[index][1] == "MOVE_LEFT":
+                    self.pen.up()
+                    self.pen.setx(self.currentParameters[0])
+                    self.pen.down()
+                elif quadList[index][1] == "DRAW_RECTANGLE":
+                    self.pen.up()
+                    self.pen.setposition(self.currentParameters[0], self.currentParameters[1])
+                    self.pen.down()
+                    self.pen.setx(self.currentParameters[3])
+                    self.pen.sety(-self.currentParameters[2])
+                    self.pen.setx(-self.currentParameters[3])
+                    self.pen.sety(self.currentParameters[2])
+                elif quadList[index][1] == "DRAW_LINE":
+                    self.pen.up()
+                    self.pen.setposition(self.currentParameters[0], self.currentParameters[1])
+                    self.pen.down()
+                    self.pen.setposition(self.currentParameters[2], self.currentParameters[3])
+                elif quadList[index][1] == "DRAW_CIRCLE":
+                    self.pen.up()
+                    self.pen.setposition(self.currentParameters[0], self.currentParameters[1])
+                    self.pen.down()
+                    self.pen.circle(self.currentParameters[2])
+
                 for param in self.currentParameters:
                     self.currentParameters.remove(param)
 
