@@ -21,10 +21,14 @@ SOLS:
             B = B + 1.0~
             print("Division")~
             D = A / 3~
-            print("Multipli")~
+            print("Multiplicación")~
             E = B * 2.0~
             print("mod")~
             F = 100 mod 30~
+        }
+        elif not A is 11:
+        {
+            print("Elif")~
         }
         else:
         {
