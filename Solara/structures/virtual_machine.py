@@ -5,7 +5,7 @@
 #  Melissa Figueroa A01280388
 #  05/03/17
 # ------------------------------------------------------------
-
+import sys
 from structures.execution_block import executionBlock
 
 class virtualMachine:
@@ -74,11 +74,15 @@ class virtualMachine:
                         right_value = self.mainMemory.get_value(quadList[index][2])
                     else:
                         right_value = self.executionBlock.get_value(quadList[index][2])
+                    if right_value == 0:
+                        self.error_division_by_zero()
                     result = left_value / right_value
                     self.executionBlock.set_value(quadList[index][3], result)
                 else:
                     left_value = self.mainMemory.get_value(quadList[index][1])
                     right_value = self.mainMemory.get_value(quadList[index][2])
+                    if right_value == 0:
+                        self.error_division_by_zero()
                     result = left_value / right_value
                     self.mainMemory.set_value(quadList[index][3], result)
 
@@ -395,3 +399,9 @@ class virtualMachine:
                     self.currentParameters.remove(param)
 
             index += 1
+
+    # Error-handling functions for execution-time semantic analysis
+    def error_division_by_zero(self):
+        print('Error!')
+        print('Division by 0 not possible!')
+        sys.exit()
