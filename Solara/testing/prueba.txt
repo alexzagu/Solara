@@ -7,13 +7,24 @@ VARS:
 SOLS:
     int main():
     {
-        int A = 10~
-        float B = 5.5~
+        int A = 10, D, F~
+        float B = 5.5, E~
         string C = "Hello World!"~
 
-        if A > 10:
+        if (A == 10) && (B == 5.5):
         {
             print("True!")~
+
+            print("Resta")~
+            A = A - 1~
+            print("Suma")~
+            B = B + 1.0~
+            print("Division")~
+            D = A / 3~
+            print("Multipli")~
+            E = B * 2.0~
+            print("mod")~
+            F = 100 mod 30~
         }
         else:
         {
@@ -22,5 +33,8 @@ SOLS:
 
         print(A)~
         print(B)~
+        print(D)~
+        print(E)~
+        print(F)~
         print("Blah")~
     }~

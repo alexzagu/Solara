@@ -45,22 +45,111 @@ class virtualMachine:
             # Multiplication operation
             if quadList[index][0] == "*":
                 print(str(index) + ": " + str(quadList[index][1]) + " * " + str(quadList[index][2]) + " = " + str(quadList[index][3]))
+                if self.is_virtual_address_global(quadList[index][1]):
+                    left_value = self.mainMemory.get_value(quadList[index][1])
+                else:
+                    left_value = self.executionBlock.get_value(quadList[index][1])
+
+                if self.is_virtual_address_global(quadList[index][2]):
+                    right_value = self.mainMemory.get_value(quadList[index][2])
+                else:
+                    right_value = self.executionBlock.get_value(quadList[index][2])
+
+                result = left_value * right_value
+
+                self.executionBlock.set_value(quadList[index][3], result)
 
             # Division operation
             elif quadList[index][0] == "/":
                 print(str(index) + ": " + str(quadList[index][1]) + " / " + str(quadList[index][2]) + " = " + str(quadList[index][3]))
+                if self.is_virtual_address_global(quadList[index][1]):
+                    left_value = self.mainMemory.get_value(quadList[index][1])
+                else:
+                    left_value = self.executionBlock.get_value(quadList[index][1])
+
+                if self.is_virtual_address_global(quadList[index][2]):
+                    right_value = self.mainMemory.get_value(quadList[index][2])
+                else:
+                    right_value = self.executionBlock.get_value(quadList[index][2])
+
+                result = left_value / right_value
+
+                self.executionBlock.set_value(quadList[index][3], result)
 
             # Addition operation
             elif quadList[index][0] == "+":
                 print(str(index) + ": " + str(quadList[index][1]) + " + " + str(quadList[index][2]) + " = " + str(quadList[index][3]))
+                if self.is_virtual_address_global(quadList[index][1]):
+                    left_value = self.mainMemory.get_value(quadList[index][1])
+                else:
+                    left_value = self.executionBlock.get_value(quadList[index][1])
+
+                if self.is_virtual_address_global(quadList[index][2]):
+                    right_value = self.mainMemory.get_value(quadList[index][2])
+                else:
+                    right_value = self.executionBlock.get_value(quadList[index][2])
+
+                result = left_value + right_value
+
+                self.executionBlock.set_value(quadList[index][3], result)
 
             # Subtraction operation
             elif quadList[index][0] == "-":
                 print(str(index) + ": " + str(quadList[index][1]) + " - " + str(quadList[index][2]) + " = " + str(quadList[index][3]))
+                if self.is_virtual_address_global(quadList[index][1]):
+                    left_value = self.mainMemory.get_value(quadList[index][1])
+                else:
+                    left_value = self.executionBlock.get_value(quadList[index][1])
+
+                if self.is_virtual_address_global(quadList[index][2]):
+                    right_value = self.mainMemory.get_value(quadList[index][2])
+                else:
+                    right_value = self.executionBlock.get_value(quadList[index][2])
+
+                result = left_value - right_value
+
+                self.executionBlock.set_value(quadList[index][3], result)
 
             # Less than operation
             elif quadList[index][0] == "<":
                 print(str(index) + ": " + str(quadList[index][1]) + " < " + str(quadList[index][2]) + " = " + str(quadList[index][3]))
+                if self.is_virtual_address_global(quadList[index][1]):
+                    left_value = self.mainMemory.get_value(quadList[index][1])
+                else:
+                    left_value = self.executionBlock.get_value(quadList[index][1])
+
+                if self.is_virtual_address_global(quadList[index][2]):
+                    right_value = self.mainMemory.get_value(quadList[index][2])
+                else:
+                    right_value = self.executionBlock.get_value(quadList[index][2])
+
+                if left_value < right_value:
+                    result = True
+                else:
+                    result = False
+
+                self.executionBlock.set_value(quadList[index][3], result)
+
+            # Less equal than operation
+            elif quadList[index][0] == "<=":
+                print(str(index) + ": " + str(quadList[index][1]) + " <= " + str(quadList[index][2]) + " = " + str(
+                    quadList[index][3]))
+                if self.is_virtual_address_global(quadList[index][1]):
+                    left_value = self.mainMemory.get_value(quadList[index][1])
+                else:
+                    left_value = self.executionBlock.get_value(quadList[index][1])
+
+                if self.is_virtual_address_global(quadList[index][2]):
+                    right_value = self.mainMemory.get_value(quadList[index][2])
+                else:
+                    right_value = self.executionBlock.get_value(quadList[index][2])
+
+                if left_value <= right_value:
+                    result = True
+                else:
+                    result = False
+
+                self.executionBlock.set_value(quadList[index][3], result)
 
             # Greater than operation
             elif quadList[index][0] == ">":
@@ -82,21 +171,105 @@ class virtualMachine:
 
                 self.executionBlock.set_value(quadList[index][3], result)
 
+            # Greater equal than operation
+            elif quadList[index][0] == ">=":
+                print(str(index) + ": " + str(quadList[index][1]) + " >= " + str(quadList[index][2]) + " = " + str(
+                    quadList[index][3]))
+                if self.is_virtual_address_global(quadList[index][1]):
+                    left_value = self.mainMemory.get_value(quadList[index][1])
+                else:
+                    left_value = self.executionBlock.get_value(quadList[index][1])
+
+                if self.is_virtual_address_global(quadList[index][2]):
+                    right_value = self.mainMemory.get_value(quadList[index][2])
+                else:
+                    right_value = self.executionBlock.get_value(quadList[index][2])
+
+                if left_value >= right_value:
+                    result = True
+                else:
+                    result = False
+
+                self.executionBlock.set_value(quadList[index][3], result)
+
             # Or operation
             elif quadList[index][0] == "||":
                 print(str(index) + ": " + str(quadList[index][1]) + " || " + str(quadList[index][2]) + " = " + str(quadList[index][3]))
+                if self.is_virtual_address_global(quadList[index][1]):
+                    left_value = self.mainMemory.get_value(quadList[index][1])
+                else:
+                    left_value = self.executionBlock.get_value(quadList[index][1])
+
+                if self.is_virtual_address_global(quadList[index][2]):
+                    right_value = self.mainMemory.get_value(quadList[index][2])
+                else:
+                    right_value = self.executionBlock.get_value(quadList[index][2])
+
+                if left_value or right_value:
+                    result = True
+                else:
+                    result = False
+
+                self.executionBlock.set_value(quadList[index][3], result)
+
 
             # And operation
             elif quadList[index][0] == "&&":
                 print(str(index) + ": " + str(quadList[index][1]) + " && " + str(quadList[index][2]) + " = " + str(quadList[index][3]))
+                if self.is_virtual_address_global(quadList[index][1]):
+                    left_value = self.mainMemory.get_value(quadList[index][1])
+                else:
+                    left_value = self.executionBlock.get_value(quadList[index][1])
+
+                if self.is_virtual_address_global(quadList[index][2]):
+                    right_value = self.mainMemory.get_value(quadList[index][2])
+                else:
+                    right_value = self.executionBlock.get_value(quadList[index][2])
+
+                if left_value and right_value:
+                    result = True
+                else:
+                    result = False
+
+                self.executionBlock.set_value(quadList[index][3], result)
 
             # Is equals operation
             elif quadList[index][0] == "==":
                 print(str(index) + ": " + str(quadList[index][1]) + " == " + str(quadList[index][2]) + " = " + str(quadList[index][3]))
+                if self.is_virtual_address_global(quadList[index][1]):
+                    left_value = self.mainMemory.get_value(quadList[index][1])
+                else:
+                    left_value = self.executionBlock.get_value(quadList[index][1])
+
+                if self.is_virtual_address_global(quadList[index][2]):
+                    right_value = self.mainMemory.get_value(quadList[index][2])
+                else:
+                    right_value = self.executionBlock.get_value(quadList[index][2])
+
+                if left_value == right_value:
+                    result = True
+                else:
+                    result = False
+
+                self.executionBlock.set_value(quadList[index][3], result)
+
 
             # Mod operation
             elif quadList[index][0] == "%":
                 print(str(index) + ": " + str(quadList[index][1]) + " % " + str(quadList[index][2]) + " = " + str(quadList[index][3]))
+                if self.is_virtual_address_global(quadList[index][1]):
+                    left_value = self.mainMemory.get_value(quadList[index][1])
+                else:
+                    left_value = self.executionBlock.get_value(quadList[index][1])
+
+                if self.is_virtual_address_global(quadList[index][2]):
+                    right_value = self.mainMemory.get_value(quadList[index][2])
+                else:
+                    right_value = self.executionBlock.get_value(quadList[index][2])
+
+                result = left_value % right_value
+
+                self.executionBlock.set_value(quadList[index][3], result)
 
             # Assignation operation
             elif quadList[index][0] == "=":
