@@ -1,0 +1,28 @@
+program Success:
+
+@ Success test program.
+
+VARS:
+    int A = 5~
+SOLS:
+    sol void funcA():
+    {
+        print("Hola buenos días !")~
+        print(A)~
+        int variable = 0~
+        while variable < 5:
+        {
+            print(variable)~
+            variable = variable + 1~
+        }~
+        return~
+    }~
+    int main():
+    {
+        int A = 10, D, F~
+        float B = 5.5, E~
+        print("Hello World!")~
+        drawCircle(50, 50, 100)~
+        funcA()~
+        return 0~
+    }~

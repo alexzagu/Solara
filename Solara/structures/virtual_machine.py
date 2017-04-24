@@ -19,12 +19,16 @@ class virtualMachine:
         print(self.mainMemory)
         self.pen = self.turtle_setup()
         self.execute(quadQueue.quadList)
-        self.pen.getscreen()._root.mainloop()
+        if self.have_predefined_solutions_been_used:
+            self.pen.getscreen()._root.mainloop()
 
     # Class variables
     currentParameters = []
     have_global_definitions_been_processed = False
     executionBlock = executionBlock()
+    have_predefined_solutions_been_used = False
+    executionStack = []
+    nextExecutionBlock = None
 
     # stringTo methods
 
@@ -381,14 +385,28 @@ class virtualMachine:
             elif quadList[index][0] == "GOTO":
                 index = (quadList[index][3] - 1)
 
+            # ERA operation
+            elif quadList[index][0] == "ERA":
+                self.nextExecutionBlock = executionBlock()
+                self.nextExecutionBlock.malloc(self.funDir.search(quadList[index][1])[3], self.funDir.search(quadList[index][1])[4], self.funDir.search(quadList[index][1])[5])
+
             # GOSUB operation
             elif quadList[index][0] == "GOSUB":
                 if quadList[index][1] == "main":
                     self.have_global_definitions_been_processed = True
                     self.executionBlock.malloc(self.funDir.search('main')[3], self.funDir.search('main')[4], self.funDir.search('main')[5])
-                    index = (quadList[index][3] - 1)
                 else:
-                    print()
+                    self.executionStack.append((self.executionBlock, index + 1))
+                    self.executionBlock = self.nextExecutionBlock
+
+                index = (quadList[index][3] - 1)
+
+            # ENDPROC operation
+            elif quadList[index][0] == "ENDPROC":
+                if len(self.executionStack) > 0:
+                    execution_unit = self.executionStack.pop()
+                    self.executionBlock = execution_unit[0]
+                    index = execution_unit[1]
 
             # PRINT operation
             elif quadList[index][0] == "PRINT":
@@ -403,6 +421,7 @@ class virtualMachine:
 
             # EXEC operation
             elif quadList[index][0] == "EXEC":
+                self.have_predefined_solutions_been_used = True
                 if quadList[index][1] == "PRINT":
                     print(self.currentParameters[0])
                 elif quadList[index][1] == "MOVE_UP":
@@ -425,10 +444,10 @@ class virtualMachine:
                     self.pen.up()
                     self.pen.setposition(self.currentParameters[0], self.currentParameters[1])
                     self.pen.down()
-                    self.pen.setx(self.currentParameters[3])
                     self.pen.sety(-self.currentParameters[2])
                     self.pen.setx(-self.currentParameters[3])
                     self.pen.sety(self.currentParameters[2])
+                    self.pen.setx(self.currentParameters[3])
                 elif quadList[index][1] == "DRAW_LINE":
                     self.pen.up()
                     self.pen.setposition(self.currentParameters[0], self.currentParameters[1])
@@ -440,8 +459,7 @@ class virtualMachine:
                     self.pen.down()
                     self.pen.circle(self.currentParameters[2])
 
-                for param in self.currentParameters:
-                    self.currentParameters.remove(param)
+                self.currentParameters = []
 
             index += 1
 

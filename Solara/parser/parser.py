@@ -258,8 +258,18 @@ def p_s_statute(p):
 
 def p_solution_def(p):
     '''
-    SOLUTION_DEF : SOL S_TYPE store_type ID check_sol_duplicates L_PAREN PARAMS R_PAREN COLON S_BLOCK TICK update_fun print_currentSymTab free_symbol_table reset_execution_block
+    SOLUTION_DEF : SOL S_TYPE store_type ID check_sol_duplicates L_PAREN PARAMS R_PAREN COLON S_BLOCK check_for_return_statement TICK update_fun print_currentSymTab free_symbol_table reset_execution_block
     '''
+
+def p_check_for_return_statement(p):
+    '''
+    check_for_return_statement :
+    '''
+    global solHasReturn
+    if not solHasReturn:
+        p_error_no_return_statement_found(p)
+    else:
+        solHasReturn = False
 
 def p_reset_execution_block(p):
     '''
@@ -329,6 +339,8 @@ def p_process_return_operation_with_return_value(p):
     '''
     process_return_operation_with_return_value :
     '''
+    global solHasReturn
+    solHasReturn = True
     PTypes.pop()
     operand = POperands.pop()
     quadQueue.add('RETURN', operand, None, None)
@@ -338,6 +350,8 @@ def p_process_return_operation_without_return_value(p):
     '''
     process_return_operation_without_return_value :
     '''
+    global solHasReturn
+    solHasReturn = True
     quadQueue.add('RETURN', None, None, None)
     quadQueue.add('ENDPROC', None, None, None)
 
@@ -984,7 +998,7 @@ def p_end_argument_processing(p):
     '''
     global param_counter
     global solution_name
-    if param_counter == (len(funDir.search(solution_name)[1]) - 1):
+    if param_counter == (len(funDir.search(solution_name)[1])):
         quadQueue.add('GOSUB', solution_name, None, funDir.search(solution_name)[6])
         param_counter = -1
     else:
@@ -994,10 +1008,9 @@ def p_generate_era_quad(p):
     '''
     generate_era_quad :
     '''
-    quadQueue.add('era', p[-3], None, None)
+    quadQueue.add('ERA', p[-3], None, None)
     global param_counter
     param_counter = param_counter + 1
-
 
 def p_check_sol_existence(p):
     '''
@@ -1015,6 +1028,7 @@ def p_check_sol_existence(p):
 def p_v(p):
     '''
     V : S_EXPRESSION process_argument X
+    | empty
     '''
 
 def p_process_argument(p):
@@ -1028,6 +1042,7 @@ def p_process_argument(p):
     if param_counter < len(funDir.search(solution_name)[1]):
         if argument_type == funDir.search(solution_name)[1][param_counter]:
             quadQueue.add('PARAMETER', argument, None, param_counter + 1)
+            param_counter = param_counter + 1
         else:
             p_error_argument_type_mismatch(p)
     else:
@@ -1036,16 +1051,9 @@ def p_process_argument(p):
 
 def p_x(p):
     '''
-    X : COMMA update_parameter_counter V
+    X : COMMA V
     | empty
     '''
-
-def p_update_parameter_counter(p):
-    '''
-    update_parameter_counter :
-    '''
-    global param_counter
-    param_counter = param_counter + 1
 
 #-------------------------------------------------------------
 
@@ -1109,7 +1117,7 @@ def p_z(p):
 
 def p_main_definition(p):
     '''
-    MAIN_DEFINITION : INT store_type MAIN_R check_sol_duplicates L_PAREN R_PAREN COLON S_BLOCK TICK update_fun print_currentSymTab free_symbol_table reset_execution_block update_go_to_main_quad
+    MAIN_DEFINITION : INT store_type MAIN_R check_sol_duplicates L_PAREN R_PAREN COLON S_BLOCK check_for_return_statement TICK update_fun print_currentSymTab free_symbol_table reset_execution_block update_go_to_main_quad
     '''
     global programID
     print('\n')
@@ -1444,6 +1452,14 @@ def p_error_exceeded_memory_capability(p):
     print('Exceeded memory capability!')
     sys.exit()
 
+# Error-handling function for no return statement in solution definition
+def p_error_no_return_statement_found(p):
+    '''
+    '''
+    print('Error!')
+    print('No return statement found in solution definition!')
+    sys.exit()
+
 # se contruye el parser
 parser = yacc.yacc()
 
@@ -1464,7 +1480,7 @@ input = ' '.join(lines)
 print input
 '''
 
-with open('../testing/prueba.txt', 'r') as myfile:
+with open('../testing/TestSolutionCall.txt', 'r') as myfile:
     data = myfile.read()
 
 #with open('../testing/failure_test.txt', 'r') as myfile:
