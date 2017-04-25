@@ -8,6 +8,7 @@
 import sys
 from structures.execution_block import executionBlock
 from turtle import *
+from tkinter import *
 
 class virtualMachine:
 
@@ -18,7 +19,16 @@ class virtualMachine:
         self.mainMemory.malloc(self.funDir.search(programID)[4], self.funDir.search(programID)[5])
         print(self.mainMemory)
         self.pen = self.turtle_setup()
+        self.root = Tk()
+        self.terminal = Tk()
+        self.terminalCount = 0
+        self.top_frame_root = Frame(self.root)
+        self.top_frame_terminal = Frame(self.terminal)
+        self.bottom_frame_root = Frame(self.root)
+        self.bottom_frame_terminal = Frame(self.terminal)
+        self.entry = Text(self.root)
         self.execute(quadQueue.quadList)
+        self.ide_setup()
         if self.have_predefined_solutions_been_used:
             self.pen.getscreen()._root.mainloop()
 
@@ -40,15 +50,58 @@ class virtualMachine:
 
     def turtle_setup(self):
         pen = Pen()
-        pen.screen.bgcolor('#94B3C6')
+        screen_width = pen.screen.window_width()
+        screen_height = pen.screen.window_height()
+        pen.screen.setup(width=screen_width, height=screen_height/2+50, startx=screen_width, starty=0)
+
         pen.color('#f4425c')
+
         return pen
+
+    def terminal_print(self, strprint):
+        label = Label(self.bottom_frame_terminal, text=strprint, anchor='w')
+        #label.config(anchor=W, justify=LEFT)
+        label.grid(sticky=E)
+        label.configure(bg="black")
+        label.configure(fg="white")
+        self.terminalCount += 1
+        label.pack()
+
+
+
 
     def is_virtual_address_global(self, virtual_address):
         if self.mainMemory.is_virtual_address_global_or_constant(virtual_address):
             return True
         else:
             return False
+
+    def ide_setup(self):
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        self.root.geometry('%dx%d+%d+%d' % (screen_width/2-20, screen_height-80, 0, 0))
+        self.terminal.configure(background='black')
+        self.terminal.geometry('%dx%d+%d+%d' % (screen_width/2, screen_height/2-80, screen_width/2, screen_height/2))
+        
+        self.top_frame_root.pack()
+        self.top_frame_terminal.pack()
+        self.bottom_frame_root.pack(side=BOTTOM)
+        self.bottom_frame_terminal.pack(side=BOTTOM)
+        self.bottom_frame_terminal.configure(bg="black")
+        self.entry.configure(width=screen_width/2, height=screen_height)
+
+        button_compilar = Button(self.top_frame_root, text="Compilar programa")
+        button_cargar = Button(self.top_frame_root, text="Cargar programa")
+        button_guardar = Button(self.top_frame_root, text="Guardar programa")
+        button_ejecutar = Button(self.top_frame_root, text="Ejecutar programa")
+        button_compilar.pack()
+        button_cargar.pack()
+        button_guardar.pack()
+        button_ejecutar.pack()
+        self.entry.pack()
+
+
+        self.root.mainloop()
 
     def execute(self, quadList):
 
@@ -412,6 +465,7 @@ class virtualMachine:
             elif quadList[index][0] == "PRINT":
                 print('')
 
+
             # PARAMETER operation
             elif quadList[index][0] == "PARAMETER":
                 if self.is_virtual_address_global(quadList[index][1]):
@@ -424,6 +478,7 @@ class virtualMachine:
                 self.have_predefined_solutions_been_used = True
                 if quadList[index][1] == "PRINT":
                     print(self.currentParameters[0])
+                    self.terminal_print(self.currentParameters[0])
                 elif quadList[index][1] == "MOVE_UP":
                     self.pen.up()
                     self.pen.sety(self.currentParameters[0])
@@ -467,4 +522,4 @@ class virtualMachine:
     def error_division_by_zero(self):
         print('Error!')
         print('Division by 0 not possible!')
-        sys.exit()
+        tkinter.sys.exit()
