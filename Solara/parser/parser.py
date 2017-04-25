@@ -258,8 +258,21 @@ def p_s_statute(p):
 
 def p_solution_def(p):
     '''
-    SOLUTION_DEF : SOL S_TYPE store_type ID check_sol_duplicates L_PAREN PARAMS R_PAREN COLON S_BLOCK check_for_return_statement TICK update_fun print_currentSymTab free_symbol_table reset_execution_block
+    SOLUTION_DEF : SOL S_TYPE store_type ID check_sol_duplicates upload_global_return_var L_PAREN PARAMS R_PAREN COLON S_BLOCK check_for_return_statement TICK update_fun print_currentSymTab free_symbol_table reset_execution_block
     '''
+
+def p_upload_global_return_var(p):
+    '''
+    upload_global_return_var :
+    '''
+    global currentSol
+    global currentType
+    global programID
+    global_return_var = ('$' + currentSol + '$')
+    virtual_address = mainMemory.availGlobals(currentType)
+    if virtual_address is None:
+        p_error_exceeded_memory_capability(p)
+    funDir.search(programID)[2].add(global_return_var, currentType, virtual_address)
 
 def p_check_for_return_statement(p):
     '''
@@ -340,10 +353,15 @@ def p_process_return_operation_with_return_value(p):
     process_return_operation_with_return_value :
     '''
     global solHasReturn
+    global currentSol
+    global programID
+    global_return_var = ('$' + currentSol + '$')
     solHasReturn = True
     PTypes.pop()
     operand = POperands.pop()
-    quadQueue.add('RETURN', operand, None, None)
+    global_return_virtual_address = funDir.search(programID)[2].search(global_return_var)[1]
+
+    quadQueue.add('RETURN', operand, None, global_return_virtual_address)
     quadQueue.add('ENDPROC', None, None, None)
 
 def p_process_return_operation_without_return_value(p):
@@ -998,8 +1016,12 @@ def p_end_argument_processing(p):
     '''
     global param_counter
     global solution_name
+    global executionBlock
     if param_counter == (len(funDir.search(solution_name)[1])):
         quadQueue.add('GOSUB', solution_name, None, funDir.search(solution_name)[6])
+        temporal_virtual_address = executionBlock.availTemporal(funDir.search(solution_name)[0])
+        if temporal_virtual_address is None:
+            p_error_exceeded_memory_capability(p)
         param_counter = -1
     else:
         p_error_less_parameters_than_expected(p)
@@ -1117,7 +1139,7 @@ def p_z(p):
 
 def p_main_definition(p):
     '''
-    MAIN_DEFINITION : INT store_type MAIN_R check_sol_duplicates L_PAREN R_PAREN COLON S_BLOCK check_for_return_statement TICK update_fun print_currentSymTab free_symbol_table reset_execution_block update_go_to_main_quad
+    MAIN_DEFINITION : INT store_type MAIN_R check_sol_duplicates upload_global_return_var L_PAREN R_PAREN COLON S_BLOCK check_for_return_statement TICK update_fun print_currentSymTab free_symbol_table reset_execution_block update_go_to_main_quad
     '''
     global programID
     print('\n')
