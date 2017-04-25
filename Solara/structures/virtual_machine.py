@@ -26,6 +26,7 @@ class virtualMachine:
         self.top_frame_terminal = Frame(self.terminal)
         self.bottom_frame_root = Frame(self.root)
         self.bottom_frame_terminal = Frame(self.terminal)
+        self.entry = Text(self.root)
         self.execute(quadQueue.quadList)
         self.ide_setup()
         if self.have_predefined_solutions_been_used:
@@ -81,13 +82,13 @@ class virtualMachine:
         self.root.geometry('%dx%d+%d+%d' % (screen_width/2-20, screen_height-80, 0, 0))
         self.terminal.configure(background='black')
         self.terminal.geometry('%dx%d+%d+%d' % (screen_width/2, screen_height/2-80, screen_width/2, screen_height/2))
-
         
         self.top_frame_root.pack()
         self.top_frame_terminal.pack()
         self.bottom_frame_root.pack(side=BOTTOM)
         self.bottom_frame_terminal.pack(side=BOTTOM)
         self.bottom_frame_terminal.configure(bg="black")
+        self.entry.configure(width=screen_width/2, height=screen_height)
 
         button_compilar = Button(self.top_frame_root, text="Compilar programa")
         button_cargar = Button(self.top_frame_root, text="Cargar programa")
@@ -97,6 +98,7 @@ class virtualMachine:
         button_cargar.pack()
         button_guardar.pack()
         button_ejecutar.pack()
+        self.entry.pack()
 
 
         self.root.mainloop()
