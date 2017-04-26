@@ -57,9 +57,8 @@ class virtualMachine:
 
     def terminal_print(self, strprint):
         label = Label(self.bottom_frame_terminal, text=strprint, anchor='w')
-        #label.config(anchor=W, justify=LEFT)
         label.grid(sticky=E)
-        label.configure(bg="black")
+        label.configure(bg="#363835")
         label.configure(fg="white")
         self.terminalCount += 1
         label.pack()
@@ -73,14 +72,14 @@ class virtualMachine:
     def ide_setup(self):
         screen_width = self.terminal.winfo_screenwidth()
         screen_height = self.terminal.winfo_screenheight()
-        self.terminal.configure(background='black')
+        self.terminal.configure(bg="#363835")
         self.terminal.geometry('%dx%d+%d+%d' % (screen_width/2, screen_height/2-80, screen_width/2, screen_height/2))
 
         self.top_frame_terminal.pack()
         self.bottom_frame_terminal.pack(side=BOTTOM)
-        self.bottom_frame_terminal.configure(bg="black")
+        self.bottom_frame_terminal.configure(bg="#363835")
 
-        self.terminal.mainloop()
+        #self.terminal.mainloop()
 
     def execute(self, quadList):
 
