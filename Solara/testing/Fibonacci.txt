@@ -4,13 +4,24 @@ program Success:
 
 VARS:
 SOLS:
-    sol int fibonacci():
+    sol int fibonacci(int N):
     {
-        return 1~
+        if N is 0:
+        {
+            return 0~
+        }
+        elif N is 1:
+        {
+            return 1~
+        }
+        else:
+        {
+            return fibonacci(N-1) + fibonacci(N-2)~
+        }~
     }~
     int main():
     {
-        int a = fibonacci() + fibonacci()~
-        print(a)~
+        int A = fibonacci(6)~
+        print(A)~
         return 0~
     }~
