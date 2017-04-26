@@ -157,7 +157,7 @@ def t_error(t):
 
 lexer = lex.lex()
 
-with open('../testing/TestSolutionCall.txt', 'r') as myfile:
+with open('testing/TestSolutionCall.txt', 'r') as myfile:
     data = myfile.read()
 
 #with open('../testing/failure_test.txt', 'r') as myfile:
