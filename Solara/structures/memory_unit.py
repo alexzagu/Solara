@@ -10,7 +10,6 @@ class memoryUnit:
 
     # Constructor
     def __init__(self):
-        print('')
         self.value = 0
         self.next = 0
 
