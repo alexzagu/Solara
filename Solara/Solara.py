@@ -10,7 +10,7 @@ def erase():
 
 def save_text():
     text = entry.get("1.0", END)
-    with open('testing/TestSolutionCall.txt', 'w') as f:
+    with open('testing/code_to_compile_and_execute.txt', 'w') as f:
         f.write(text)
 
 
