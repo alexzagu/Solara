@@ -265,14 +265,15 @@ def p_upload_global_return_var(p):
     '''
     upload_global_return_var :
     '''
-    global currentSol
     global currentType
-    global programID
-    global_return_var = ('$' + currentSol + '$')
-    virtual_address = mainMemory.availGlobals(currentType)
-    if virtual_address is None:
-        p_error_exceeded_memory_capability(p)
-    funDir.search(programID)[2].add(global_return_var, currentType, virtual_address)
+    if currentType != 6:
+        global currentSol
+        global programID
+        global_return_var = ('$' + currentSol + '$')
+        virtual_address = mainMemory.availGlobals(currentType)
+        if virtual_address is None:
+            p_error_exceeded_memory_capability(p)
+        funDir.search(programID)[2].add(global_return_var, currentType, virtual_address)
 
 def p_check_for_return_statement(p):
     '''
@@ -368,10 +369,14 @@ def p_process_return_operation_without_return_value(p):
     '''
     process_return_operation_without_return_value :
     '''
-    global solHasReturn
-    solHasReturn = True
-    quadQueue.add('RETURN', None, None, None)
-    quadQueue.add('ENDPROC', None, None, None)
+    sol_return_type = funDir.search(currentSol)[0]
+    if sol_return_type != 6:
+        p_error_return_type_mismatch(p)
+    else:
+        global solHasReturn
+        solHasReturn = True
+        quadQueue.add('RETURN', None, None, None)
+        quadQueue.add('ENDPROC', None, None, None)
 
 #-------------------------------------------------------------
 
@@ -1017,11 +1022,18 @@ def p_end_argument_processing(p):
     global param_counter
     global solution_name
     global executionBlock
+    global programID
     if param_counter == (len(funDir.search(solution_name)[1])):
         quadQueue.add('GOSUB', solution_name, None, funDir.search(solution_name)[6])
-        temporal_virtual_address = executionBlock.availTemporal(funDir.search(solution_name)[0])
-        if temporal_virtual_address is None:
-            p_error_exceeded_memory_capability(p)
+        sol_return_type = funDir.search(solution_name)[0]
+        if sol_return_type != 6:
+            temporal_virtual_address = executionBlock.availTemporal(funDir.search(solution_name)[0])
+            if temporal_virtual_address is None:
+                p_error_exceeded_memory_capability(p)
+            POperands.append(temporal_virtual_address)
+            PTypes.append(funDir.search(solution_name)[0])
+            global_return_var = ('$' + solution_name + '$')
+            quadQueue.add('=', funDir.search(programID)[2].search(global_return_var)[1], None, temporal_virtual_address)
         param_counter = -1
     else:
         p_error_less_parameters_than_expected(p)

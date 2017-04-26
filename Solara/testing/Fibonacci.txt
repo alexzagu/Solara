@@ -1,0 +1,16 @@
+program Success:
+
+@ Success test program.
+
+VARS:
+SOLS:
+    sol int fibonacci():
+    {
+        return 1~
+    }~
+    int main():
+    {
+        int a = fibonacci() + fibonacci()~
+        print(a)~
+        return 0~
+    }~
