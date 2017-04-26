@@ -198,7 +198,7 @@ def p_update_local_count(p):
 
 def p_b(p):
     '''
-    B : EQUALS append_left_operand append_equals C assign_var_value
+    B : EQUALS append_left_operand append_equals C
     | empty
     '''
 
@@ -211,15 +211,6 @@ def p_append_left_operand(p):
     global currentVar
     POperands.append(currentSymTab.search(currentVar)[1])
     PTypes.append(currentType)
-
-def p_assign_var_value(p):
-    '''
-    assign_var_value :
-    '''
-    global currentSymTab
-    global currentVar
-    global currentType
-    #currentSymTab.add(currentVar, currentType, p[-1])
 
 def p_c(p):
     '''
@@ -258,8 +249,23 @@ def p_s_statute(p):
 
 def p_solution_def(p):
     '''
-    SOLUTION_DEF : SOL S_TYPE store_type ID check_sol_duplicates L_PAREN PARAMS R_PAREN COLON S_BLOCK check_for_return_statement TICK update_fun print_currentSymTab free_symbol_table reset_execution_block
+    SOLUTION_DEF : SOL S_TYPE store_type ID check_sol_duplicates upload_global_return_var L_PAREN PARAMS R_PAREN COLON S_BLOCK check_for_return_statement TICK update_fun print_currentSymTab free_symbol_table reset_execution_block
     '''
+
+def p_upload_global_return_var(p):
+    '''
+    upload_global_return_var :
+    '''
+    global currentType
+    if currentType != 6:
+        global currentSol
+        global programID
+        global_return_var = ('$' + currentSol + '$')
+        virtual_address = mainMemory.availGlobals(currentType)
+        if virtual_address is None:
+            p_error_exceeded_memory_capability(p)
+        funDir.search(programID)[2].add(global_return_var, currentType, virtual_address)
+        funDir.add_global_return_var(programID, currentType)
 
 def p_check_for_return_statement(p):
     '''
@@ -340,20 +346,29 @@ def p_process_return_operation_with_return_value(p):
     process_return_operation_with_return_value :
     '''
     global solHasReturn
+    global currentSol
+    global programID
+    global_return_var = ('$' + currentSol + '$')
     solHasReturn = True
     PTypes.pop()
     operand = POperands.pop()
-    quadQueue.add('RETURN', operand, None, None)
+    global_return_virtual_address = funDir.search(programID)[2].search(global_return_var)[1]
+
+    quadQueue.add('RETURN', operand, None, global_return_virtual_address)
     quadQueue.add('ENDPROC', None, None, None)
 
 def p_process_return_operation_without_return_value(p):
     '''
     process_return_operation_without_return_value :
     '''
-    global solHasReturn
-    solHasReturn = True
-    quadQueue.add('RETURN', None, None, None)
-    quadQueue.add('ENDPROC', None, None, None)
+    sol_return_type = funDir.search(currentSol)[0]
+    if sol_return_type != 6:
+        p_error_return_type_mismatch(p)
+    else:
+        global solHasReturn
+        solHasReturn = True
+        quadQueue.add('RETURN', None, None, None)
+        quadQueue.add('ENDPROC', None, None, None)
 
 #-------------------------------------------------------------
 
@@ -469,7 +484,7 @@ def p_h(p):
 
 def p_exp(p):
     '''
-    EXP : TERM process_possible_plus_minus_operation I
+    EXP : TERM I
     '''
 
 def p_process_possible_plus_minus_operation(p):
@@ -479,6 +494,8 @@ def p_process_possible_plus_minus_operation(p):
     if len(POperators) > 0:
         operator = POperators[len(POperators) - 1]
         if operator == '+' or operator == '-':
+            if operator == '+':
+                print('add')
             right_operand = POperands.pop()
             right_type = PTypes.pop()
             left_operand = POperands.pop()
@@ -506,7 +523,7 @@ def p_process_possible_plus_minus_operation(p):
 
 def p_i(p):
     '''
-    I : J EXP
+    I : J EXP process_possible_plus_minus_operation
     | empty
     '''
 
@@ -524,7 +541,7 @@ def p_j(p):
 
 def p_term(p):
     '''
-    TERM : FACTOR process_possible_multiply_divide_operation K
+    TERM : FACTOR K
     '''
 
 def p_process_possible_multiply_divide_operation(p):
@@ -561,7 +578,7 @@ def p_process_possible_multiply_divide_operation(p):
 
 def p_k(p):
     '''
-    K : L TERM
+    K : L TERM process_possible_multiply_divide_operation
     | empty
     '''
 
@@ -989,8 +1006,6 @@ def p_solution_call(p):
     '''
     SOLUTION_CALL : ID check_sol_existence L_PAREN generate_era_quad V R_PAREN end_argument_processing
     '''
-    POperands.append(p[1])
-    PTypes.append(p[2])
 
 def p_end_argument_processing(p):
     '''
@@ -998,8 +1013,21 @@ def p_end_argument_processing(p):
     '''
     global param_counter
     global solution_name
+    global executionBlock
+    global programID
     if param_counter == (len(funDir.search(solution_name)[1])):
         quadQueue.add('GOSUB', solution_name, None, funDir.search(solution_name)[6])
+        sol_return_type = funDir.search(solution_name)[0]
+        if sol_return_type != 6:
+            temporal_virtual_address = executionBlock.availTemporal(sol_return_type)
+            if temporal_virtual_address is None:
+                p_error_exceeded_memory_capability(p)
+            POperands.append(temporal_virtual_address)
+            PTypes.append(sol_return_type)
+            global_return_var = ('$' + solution_name + '$')
+            quadQueue.add('=', funDir.search(programID)[2].search(global_return_var)[1], None, temporal_virtual_address)
+            numTempVarsDefined[funDir.search(solution_name)[0]] = numTempVarsDefined[funDir.search(solution_name)[0]]\
+                                                                  + 1
         param_counter = -1
     else:
         p_error_less_parameters_than_expected(p)
@@ -1035,6 +1063,7 @@ def p_process_argument(p):
     '''
     process_argument :
     '''
+    print('hey!')
     argument = POperands.pop()
     argument_type = PTypes.pop()
     global solution_name
@@ -1117,11 +1146,9 @@ def p_z(p):
 
 def p_main_definition(p):
     '''
-    MAIN_DEFINITION : INT store_type MAIN_R check_sol_duplicates L_PAREN R_PAREN COLON S_BLOCK check_for_return_statement TICK update_fun print_currentSymTab free_symbol_table reset_execution_block update_go_to_main_quad
+    MAIN_DEFINITION : INT store_type MAIN_R check_sol_duplicates upload_global_return_var L_PAREN R_PAREN COLON S_BLOCK check_for_return_statement TICK update_fun print_currentSymTab free_symbol_table reset_execution_block update_go_to_main_quad
     '''
     global programID
-    print('\n')
-    print(quadQueue)
     print("******************************************************************")
     virMachine = virtualMachine(quadQueue, mainMemory, funDir, programID)
     print("******************************************************************")
@@ -1480,7 +1507,7 @@ input = ' '.join(lines)
 print input
 '''
 
-with open('../testing/TestSolutionCall.txt', 'r') as myfile:
+with open('../testing/Fibonacci.txt', 'r') as myfile:
     data = myfile.read()
 
 #with open('../testing/failure_test.txt', 'r') as myfile:

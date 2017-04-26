@@ -27,6 +27,7 @@ class virtualMachine:
         self.bottom_frame_root = Frame(self.root)
         self.bottom_frame_terminal = Frame(self.terminal)
         self.entry = Text(self.root)
+        print(quadQueue)
         self.execute(quadQueue.quadList)
         self.ide_setup()
         if self.have_predefined_solutions_been_used:
@@ -66,9 +67,6 @@ class virtualMachine:
         label.configure(fg="white")
         self.terminalCount += 1
         label.pack()
-
-
-
 
     def is_virtual_address_global(self, virtual_address):
         if self.mainMemory.is_virtual_address_global_or_constant(virtual_address):
@@ -396,22 +394,15 @@ class virtualMachine:
 
             # Assignation operation
             elif quadList[index][0] == "=":
-                #print(str(index) + ": " + str(quadList[index][3]) + " = " + str(quadList[index][1]))
                 if self.have_global_definitions_been_processed:
                     if self.is_virtual_address_global(quadList[index][1]):
-                        #print('global or constant')
                         value = self.mainMemory.get_value(quadList[index][1])
-                        #print(value)
                         self.executionBlock.set_value(quadList[index][3], value)
                     else:
-                        #print('local')
                         value = self.executionBlock.get_value(quadList[index][1])
-                        #print(value)
                         self.executionBlock.set_value(quadList[index][3], value)
                 else:
-                    #print('global')
                     value = self.mainMemory.get_value(quadList[index][1])
-                    #print(value)
                     self.mainMemory.set_value(quadList[index][3], value)
 
             # Negation operation
@@ -449,10 +440,25 @@ class virtualMachine:
                     self.have_global_definitions_been_processed = True
                     self.executionBlock.malloc(self.funDir.search('main')[3], self.funDir.search('main')[4], self.funDir.search('main')[5])
                 else:
-                    self.executionStack.append((self.executionBlock, index + 1))
+                    self.executionStack.append((self.executionBlock, index))
                     self.executionBlock = self.nextExecutionBlock
+                    parameter_virtual_address = 100000
+                    for parameter in self.currentParameters:
+                        self.executionBlock.set_value(parameter_virtual_address, parameter)
+                        parameter_virtual_address = parameter_virtual_address + 1
+
+                    self.currentParameters = []
 
                 index = (quadList[index][3] - 1)
+
+            # RETURN operation
+            elif quadList[index][0] == "RETURN":
+                if self.is_virtual_address_global(quadList[index][1]):
+                    value = self.mainMemory.get_value(quadList[index][1])
+                else:
+                    value = self.executionBlock.get_value(quadList[index][1])
+
+                self.mainMemory.set_value(quadList[index][3], value)
 
             # ENDPROC operation
             elif quadList[index][0] == "ENDPROC":

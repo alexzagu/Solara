@@ -79,3 +79,7 @@ class functionDirectory:
     # Method to update the list of number of temporal variables defined of each data type
     def update_number_of_temp_variables(self, name, numTempVarsDefined):
         self.functionDic[name][5] = numTempVarsDefined
+
+    # Method to include the global return variables from each solution to the list of global variables defined
+    def add_global_return_var(self, name, type):
+        self.functionDic[name][4][type] = self.functionDic[name][4][type] + 1
