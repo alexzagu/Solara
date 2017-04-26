@@ -1507,7 +1507,7 @@ input = ' '.join(lines)
 print input
 '''
 
-with open('../testing/Fibonacci.txt', 'r') as myfile:
+with open('testing/code_to_compile_and_execute.txt', 'r') as myfile:
     data = myfile.read()
 
 #with open('../testing/failure_test.txt', 'r') as myfile:
