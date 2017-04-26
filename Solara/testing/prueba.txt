@@ -5,49 +5,24 @@ program Success:
 VARS:
     int A = 5~
 SOLS:
+    sol void funcA():
+    {
+        print("Hola buenos dias !")~
+        print(A)~
+        int variable = 0~
+        while variable < 5:
+        {
+            print(variable)~
+            variable = variable + 1~
+        }~
+        return~
+    }~
     int main():
     {
         int A = 10, D, F~
         float B = 5.5, E~
-        string C = "Hello World!"~
-
-        if (A == 10) && (B == 5.5):
-        {
-            print("True!")~
-
-            print("Resta")~
-            A = A - 1~
-            print("Suma")~
-            B = B + 1.0~
-            print("Division")~
-            D = A / 3~
-            print("Multiplicación")~
-            E = B * 2.0~
-            print("mod")~
-            F = 100 mod 30~
-        }
-        elif not A is 11:
-        {
-            print("Elif")~
-        }
-        else:
-        {
-            print("Not true!")~
-        }~
-
-        int X = 0~
-        for X = 0~ X < 10~ X = X + 1:
-       {
-            print(X)~
-       }~
-
-        print(A)~
-        print(B)~
-        print(D)~
-        print(E)~
-        print(F)~
-        print("Blah")~
-
-        drawCircle(10, 10, 100)~
-        drawRectangle(50, 50, 50, 40)~
+        print("Hello World!")~
+        drawCircle(50, 50, 100)~
+        funcA()~
+        return 0~
     }~
