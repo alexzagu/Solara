@@ -88,3 +88,7 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# Solara specific files and directories
+testing/
+Solara.py
