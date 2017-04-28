@@ -19,11 +19,13 @@ from structures.quad_queue import quadQueue
 from structures.virtual_machine import virtualMachine
 from structures.main_memory import mainMemory
 from structures.execution_block import executionBlock
+from structures.list_information import listInformation
 import re
 #-------------------------------------------------------------
 funDir = functionDirectory()
 semCube = semanticCube()
 currentType = None # Code signing of the type of the current variable (currentVar)
+currentListType = None # Code signing of the type of the current list
 currentSymTab = None # Actual object of the current symbol table
 currentVar = None # Variable that's being processed at the moment
 currentSol = None # Solution that's being processed at the moment
@@ -47,6 +49,11 @@ solution_name = None # Solution name for solution call semantic analysis
 virMachine = None
 mainMemory = mainMemory()
 executionBlock = executionBlock()
+currentListInformation = None # Object that holds the information of the list being processed, if any.
+currentListLength = 0 # Length of the list that's currently being processed.
+currentListBaseVirtualAddress = None # Base virtual address of the list that's currently being processed.
+listVirtualAddressToModify = None # The list element that needs to be modified in order to link the list elements.
+potentialNextListVirtualAddress = None # Potential next virtual address from a list.
 #-------------------------------------------------------------
 
 def p_program(p):
@@ -164,8 +171,46 @@ def p_store_type(p):
 
 def p_a(p):
     '''
-    A : ID check_var_duplicates update_local_count B D
+    A : LIST_TYPE_SPECIFICATION ID check_var_duplicates update_local_count B D
     '''
+
+def p_list_type_specification(p):
+    '''
+    LIST_TYPE_SPECIFICATION : LESS_T LIST_TYPE GREATER_T
+    | empty check_for_list_type_specification
+    '''
+
+def p_check_for_list_type_specification(p):
+    '''
+    check_for_list_type_specification :
+    '''
+    global currentType
+    if currentType == 5:
+        error_missing_list_type_specification(p)
+
+def p_list_type(p):
+    '''
+    LIST_TYPE : INT
+    | FLOAT
+    | CHAR
+    | STRING
+    | BOOL
+    '''
+    global currentListType
+    global currentType
+    if currentType == 5:
+        if p[1] == 'int':
+            currentListType = 0
+        elif p[1] == 'float':
+            currentListType = 1
+        elif p[1] == 'char':
+            currentListType = 3
+        elif p[1] == 'string':
+            currentListType = 2
+        elif p[1] == 'bool':
+            currentListType = 4
+    else:
+        p_error_type_mismatch(p)
 
 def p_check_var_duplicates(p):
     '''
@@ -177,13 +222,16 @@ def p_check_var_duplicates(p):
     global currentSol
     global programID
     if currentSymTab.search(p[-1]) is None:
-        if programID == currentSol:
-            virtual_address = mainMemory.availGlobals(currentType)
+        if currentType != 5:
+            if programID == currentSol:
+                virtual_address = mainMemory.availGlobals(currentType)
+            else:
+                virtual_address = executionBlock.availLocal(currentType)
+            if virtual_address is None:
+                p_error_exceeded_memory_capability(p)
+            currentSymTab.add(p[-1], currentType, virtual_address)
         else:
-            virtual_address = executionBlock.availLocal(currentType)
-        if virtual_address is None:
-            p_error_exceeded_memory_capability(p)
-        currentSymTab.add(p[-1], currentType, virtual_address)
+            currentSymTab.add(p[-1], currentType, None)
         currentVar = p[-1]
     else:
         p_error_duplicate_var(p[-1])
@@ -193,14 +241,23 @@ def p_update_local_count(p):
     update_local_count :
     '''
     global currentType
-    numLocalVarsDefined[currentType] = numLocalVarsDefined[currentType] + 1
-    numGlobalVarsDefined[currentType] = numGlobalVarsDefined[currentType] + 1
+    if currentType != 5:
+        numLocalVarsDefined[currentType] = numLocalVarsDefined[currentType] + 1
+        numGlobalVarsDefined[currentType] = numGlobalVarsDefined[currentType] + 1
 
 def p_b(p):
     '''
-    B : EQUALS append_left_operand append_equals C
-    | empty
+    B : EQUALS C
+    | empty check_for_list_assignation
     '''
+
+def p_check_for_list_assignation(p):
+    '''
+    check_for_list_assignation :
+    '''
+    global currentType
+    if currentType == 5:
+        error_missing_list_assignation(p)
 
 def p_append_left_operand(p):
     '''
@@ -214,9 +271,17 @@ def p_append_left_operand(p):
 
 def p_c(p):
     '''
-    C : S_EXPRESSION process_assignation_operation
+    C : S_EXPRESSION check_for_list_definition append_equals append_left_operand process_definition_assignation_operation
     | LIST_EXP
     '''
+
+def p_check_for_list_definition(p):
+    '''
+    check_for_list_definition :
+    '''
+    global currentType
+    if currentType == 5:
+        error_incorrect_list_definition(p)
 
 def p_d(p):
     '''
@@ -746,8 +811,8 @@ def p_get_var_type(p):
 
 def p_o(p):
     '''
-    O : L_BRACK S_EXPRESSION check_int_type R_BRACK
-    | empty
+    O : L_BRACK id_ref_check_type_correspondence S_EXPRESSION check_int_type R_BRACK
+    | empty check_for_list_reference
     '''
     global currentVar_IDREF
     global currentType_IDREF
@@ -755,13 +820,29 @@ def p_o(p):
     global programID
     global is_id_ref_global
     if currentType_IDREF == 5:
-        # TODO: Missing stuff
+        indexer = POperands.pop()
+        PTypes.pop()
         if is_id_ref_global:
-            virtual_address = funDir.search(programID)[2].search(currentVar_IDREF)[1]
+            list_length = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_length()
+            list_base_virtual_address = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_base_virtual_address()
+            list_type = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_type()
         else:
-            virtual_address = funDir.search(currentSol)[2].search(currentVar_IDREF)[1]
+            list_length = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_length()
+            list_base_virtual_address = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_base_virtual_address()
+            list_type = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_type()
+        quadQueue.add('VERIFY', indexer, 0, list_length)
+
+        if currentSol == programID:
+            virtual_address = mainMemory.availTemporal(list_type)
+        else:
+            virtual_address = executionBlock.availTemporal(list_type)
+        if virtual_address is None:
+            p_error_exceeded_memory_capability(p)
+        quadQueue.add('LOCATE', list_base_virtual_address, indexer, virtual_address)
+
         POperands.append(virtual_address)
-        PTypes.append(currentType_IDREF)
+        PTypes.append(list_type)
+        numTempVarsDefined[list_type] = numTempVarsDefined[list_type] + 1
     else:
         if is_id_ref_global:
             virtual_address = funDir.search(programID)[2].search(currentVar_IDREF)[1]
@@ -770,25 +851,150 @@ def p_o(p):
         POperands.append(virtual_address)
         PTypes.append(currentType_IDREF)
 
+def p_check_for_list_reference(p):
+    '''
+    check_for_list_reference :
+    '''
+    global currentType_IDREF
+    if currentType_IDREF == 5:
+        error_incorrect_list_reference(p)
+
+def p_id_ref_check_type_correspondence(p):
+    '''
+    id_ref_check_type_correspondence :
+    '''
+    global currentType_IDREF
+    if currentType_IDREF != 5:
+        p_error_type_mismatch(p)
+
 def p_check_int_type(p):
     '''
     check_int_type :
     '''
-    if p[-1] != 0:
+    exp_type = PTypes[len(PTypes) - 1]
+    if exp_type != 0:
         p_error_noninteger_indexing(p[-1])
 
 #-------------------------------------------------------------
 
 def p_list_exp(p):
     '''
-    LIST_EXP : L_BRACK S_EXPRESSION P R_BRACK
+    LIST_EXP : L_BRACK check_type_correspondence P R_BRACK end_list_processing
     '''
+
+def p_end_list_processing(p):
+    '''
+    end_list_processing :
+    '''
+    global potentialNextListVirtualAddress
+    global listVirtualAddressToModify
+    global currentListBaseVirtualAddress
+    global currentListLength
+    global currentListInformation
+    global currentSymTab
+    global currentVar
+    global currentListType
+    currentListInformation = listInformation()
+    currentListInformation.set_type(currentListType)
+    currentListInformation.set_base_virtual_address(currentListBaseVirtualAddress)
+    currentListInformation.set_length(currentListLength)
+    currentSymTab.update_list_information(currentVar, currentListInformation)
+    potentialNextListVirtualAddress = None
+    listVirtualAddressToModify = None
+    currentListBaseVirtualAddress = None
+    currentListLength = 0
+
+def p_check_type_correspondence(p):
+    '''
+    check_type_correspondence :
+    '''
+    global currentType
+    if currentType != 5:
+        p_error_type_mismatch(p)
 
 def p_p(p):
     '''
-    P : COMMA S_EXPRESSION P
+    P : S_EXPRESSION check_list_exp_type_correspondence update_list_local_or_global_count append_equals ask_for_avail process_definition_assignation_operation PP
     | empty
     '''
+
+def p_update_list_local_or_global_count(p):
+    '''
+    update_list_local_or_global_count :
+    '''
+    global currentListType
+    numLocalVarsDefined[currentListType] = numLocalVarsDefined[currentListType] + 1
+    numGlobalVarsDefined[currentListType] = numGlobalVarsDefined[currentListType] + 1
+
+def p_check_list_exp_type_correspondence(p):
+    '''
+    check_list_exp_type_correspondence :
+    '''
+    global currentListType
+    exp_type = PTypes[len(PTypes) - 1]
+    if currentListType != exp_type:
+        p_error_type_mismatch(p)
+
+def p_process_definition_assignation_operation(p):
+    '''
+    process_definition_assignation_operation :
+    '''
+    global potentialNextListVirtualAddress
+    if len(POperators) > 0:
+        operator = POperators[len(POperators) - 1]
+        if operator == '=':
+            left_operand = POperands.pop()
+            potentialNextListVirtualAddress = left_operand
+            left_type = PTypes.pop()
+            right_operand = POperands.pop()
+            right_type = PTypes.pop()
+            operator = POperators.pop()
+            result_type = semCube.search((left_type, operator, right_type))
+
+            if not result_type is None:
+                quadQueue.add(operator, right_operand, None, left_operand)
+            else:
+                print(str(left_type) + ', ' + operator + ', ' + str(right_type))
+                p_error_type_mismatch(p)
+
+def p_ask_for_avail(p):
+    '''
+    ask_for_avail :
+    '''
+    global currentSol
+    global programID
+    global listVirtualAddressToModify
+    global currentListBaseVirtualAddress
+    global currentListLength
+    exp_type = PTypes[len(PTypes) - 1]
+    if currentSol == programID:
+        virtual_address = mainMemory.availGlobals(exp_type)
+    else:
+        virtual_address = executionBlock.availLocal(exp_type)
+    if virtual_address is None:
+        p_error_exceeded_memory_capability(p)
+    POperands.append(virtual_address)
+    PTypes.append(exp_type)
+    currentListLength = currentListLength + 1
+    if listVirtualAddressToModify is None:
+        listVirtualAddressToModify = virtual_address
+    if currentListBaseVirtualAddress is None:
+        currentListBaseVirtualAddress = virtual_address
+
+def p_pp(p):
+    '''
+    PP : COMMA S_EXPRESSION check_list_exp_type_correspondence update_list_local_or_global_count append_equals ask_for_avail process_definition_assignation_operation process_next_element PP
+    | empty
+    '''
+
+def p_process_next_element(p):
+    '''
+    process_next_element :
+    '''
+    global listVirtualAddressToModify
+    global potentialNextListVirtualAddress
+    quadQueue.add('SET_NEXT', potentialNextListVirtualAddress, None, listVirtualAddressToModify)
+    listVirtualAddressToModify = potentialNextListVirtualAddress
 
 #-------------------------------------------------------------
 
@@ -1485,6 +1691,38 @@ def p_error_no_return_statement_found(p):
     '''
     print('Error!')
     print('No return statement found in solution definition!')
+    sys.exit()
+
+# Error-handling function for missing list type specification
+def error_missing_list_type_specification(p):
+    '''
+    '''
+    print('Error!')
+    print('Missing list type specification!')
+    sys.exit()
+
+# Error-handling function for missing list assignation
+def error_missing_list_assignation(p):
+    '''
+    '''
+    print('Error!')
+    print('Missing list assignation!')
+    sys.exit()
+
+# Error-handling function for incorrect list definition
+def error_incorrect_list_definition(p):
+    '''
+    '''
+    print('Error!')
+    print('Incorrect list definition!')
+    sys.exit()
+
+# Error-handling function for incorrect list reference
+def error_incorrect_list_reference(p):
+    '''
+    '''
+    print('Error!')
+    print('Incorrect list reference!')
     sys.exit()
 
 # se contruye el parser

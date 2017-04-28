@@ -80,6 +80,19 @@ class executionBlock:
         else:
             return None
 
+    # Set next method
+    def set_next(self, virtual_address, next_virtual_address):
+        if virtual_address >= self.localMIN and virtual_address <= self.localMAX:
+            self.local.set_next(virtual_address - self.localMIN, next_virtual_address)
+
+    # Get next method
+    def get_next(self, virtual_address):
+        if virtual_address >= self.localMIN and virtual_address <= self.localMAX:
+            return self.local.get_next(virtual_address - self.localMIN)
+
+        else:
+            return None
+
     # AVAIL for parameters method
     def availParameters(self, type):
         virtual_address = self.parameters.avail(type)

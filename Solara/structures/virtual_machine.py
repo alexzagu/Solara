@@ -459,6 +459,52 @@ class virtualMachine:
                 else:
                     self.currentParameters.append(self.executionBlock.get_value(quadList[index][1]))
 
+            # SET_NEXT operation
+            elif quadList[index][0] == "SET_NEXT":
+                if self.is_virtual_address_global(quadList[index][3]):
+                    self.mainMemory.set_next(quadList[index][3], quadList[index][1])
+                else:
+                    self.executionBlock.set_next(quadList[index][3], quadList[index][1])
+
+            # VERIFY operation
+            elif quadList[index][0] == "VERIFY":
+                if self.have_global_definitions_been_processed:
+                    if self.is_virtual_address_global(quadList[index][1]):
+                        value = self.mainMemory.get_value(quadList[index][1])
+                    else:
+                        value = self.executionBlock.get_value(quadList[index][1])
+                else:
+                    value = self.mainMemory.get_value(quadList[index][1])
+
+                if not (value >= quadList[index][2] and value < quadList[index][3]):
+                    self.error_index_out_of_bounds()
+
+            #LOCATE operation
+            elif quadList[index][0] == "LOCATE":
+                virtual_address = quadList[index][1]
+                if self.have_global_definitions_been_processed:
+                    if self.is_virtual_address_global(quadList[index][2]):
+                        indexer = self.mainMemory.get_value(quadList[index][2])
+                    else:
+                        indexer = self.executionBlock.get_value(quadList[index][2])
+
+                    if self.is_virtual_address_global(virtual_address):
+                        for counter in range(0, indexer):
+                            virtual_address = self.mainMemory.get_next(virtual_address)
+                        value = self.mainMemory.get_value(virtual_address)
+                        self.executionBlock.set_value(quadList[index][3], value)
+                    else:
+                        for counter in range(0, indexer):
+                            virtual_address = self.executionBlock.get_next(virtual_address)
+                        value = self.executionBlock.get_value(virtual_address)
+                        self.executionBlock.set_value(quadList[index][3], value)
+                else:
+                    indexer = self.mainMemory.get_value(quadList[index][2])
+                    for counter in range(0, indexer):
+                        virtual_address = self.mainMemory.get_next(virtual_address)
+                    value = self.mainMemory.get_value(virtual_address)
+                    self.mainMemory.set_value(quadList[index][3], value)
+
             # EXEC operation
             elif quadList[index][0] == "EXEC":
                 self.have_predefined_solutions_been_used = True
@@ -505,7 +551,15 @@ class virtualMachine:
             index += 1
 
     # Error-handling functions for execution-time semantic analysis
+
+    # Error-handling function for division by zero
     def error_division_by_zero(self):
         print('Error!')
         print('Division by 0 not possible!')
-        tkinter.sys.exit()
+        sys.exit()
+
+    # Error-handling function for index out of bounds
+    def error_index_out_of_bounds(self):
+        print('Error!')
+        print('Index out of bounds!')
+        sys.exit()

@@ -80,6 +80,19 @@ class mainMemory:
         else:
             return None
 
+    # Set next method
+    def set_next(self, virtual_address, next_virtual_address):
+        if virtual_address >= self.globalMIN and virtual_address <= self.globalMAX:
+            self.globals.set_next(virtual_address - self.globalMIN, next_virtual_address)
+
+    # Get next method
+    def get_next(self, virtual_address):
+        if virtual_address >= self.globalMIN and virtual_address <= self.globalMAX:
+            return self.globals.get_next(virtual_address - self.globalMIN)
+
+        else:
+            return None
+
     # AVAIL for globals method
     def availGlobals(self, type):
         virtual_address = self.globals.avail(type)

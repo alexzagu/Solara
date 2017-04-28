@@ -104,7 +104,6 @@ class memoryBlock:
 
     # Get value method
     def get_value(self, virtual_address):
-
         if virtual_address >= self.intMIN and virtual_address <= self.intMAX:
             return self.memBlock[0][virtual_address].get_value()
 
@@ -139,6 +138,43 @@ class memoryBlock:
 
         elif virtual_address >= self.boolMIN and virtual_address <= self.boolMAX:
             return self.memBlock[4][virtual_address - self.boolMIN].set_value(value)
+
+        else:
+            return None
+
+    # Set next method
+    def set_next(self, virtual_address, next_virtual_address):
+        if virtual_address >= self.intMIN and virtual_address <= self.intMAX:
+            self.memBlock[0][virtual_address].set_next(next_virtual_address)
+
+        elif virtual_address >= self.floatMIN and virtual_address <= self.floatMAX:
+            self.memBlock[1][virtual_address - self.floatMIN].set_next(next_virtual_address)
+
+        elif virtual_address >= self.stringMIN and virtual_address <= self.stringMAX:
+            self.memBlock[2][virtual_address - self.stringMIN].set_next(next_virtual_address)
+
+        elif virtual_address >= self.charMIN and virtual_address <= self.charMAX:
+            self.memBlock[3][virtual_address - self.charMIN].set_next(next_virtual_address)
+
+        elif virtual_address >= self.boolMIN and virtual_address <= self.boolMAX:
+            self.memBlock[4][virtual_address - self.boolMIN].set_next(next_virtual_address)
+
+    # Get next method
+    def get_next(self, virtual_address):
+        if virtual_address >= self.intMIN and virtual_address <= self.intMAX:
+            return self.memBlock[0][virtual_address].get_next()
+
+        elif virtual_address >= self.floatMIN and virtual_address <= self.floatMAX:
+            return self.memBlock[1][virtual_address - self.floatMIN].get_next()
+
+        elif virtual_address >= self.stringMIN and virtual_address <= self.stringMAX:
+            return self.memBlock[2][virtual_address - self.stringMIN].get_next()
+
+        elif virtual_address >= self.charMIN and virtual_address <= self.charMAX:
+            return self.memBlock[3][virtual_address - self.charMIN].get_next()
+
+        elif virtual_address >= self.boolMIN and virtual_address <= self.boolMAX:
+            return self.memBlock[4][virtual_address - self.boolMIN].get_next()
 
         else:
             return None
