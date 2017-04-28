@@ -16,7 +16,8 @@ class symbolTable:
         Instance variable symbolicDic
         Dictionary that holds all variable information for a specific scope.
         It follows the following format:
-        key: name value: [type, value]
+        key: name value: [type, virtual_address] or
+        key: name value: [type, list_information]
         '''
         print('Initializing symbol table....')
         self.symbolDic = {}
@@ -38,8 +39,8 @@ class symbolTable:
     # Method definitions
 
     # Add method
-    def add(self, name, type, value):
-        self.symbolDic[name] = [type, value]
+    def add(self, name, type, virtual_address_or_object):
+        self.symbolDic[name] = [type, virtual_address_or_object]
 
     # Search method
     def search(self, name):
@@ -47,6 +48,10 @@ class symbolTable:
             return self.symbolDic[name]
         else:
             return None
+
+    # Update list information
+    def update_list_information(self, name, list_information):
+        self.symbolDic[name][1] = list_information
 
     # Delete method
     def clear(self):
