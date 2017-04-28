@@ -505,6 +505,13 @@ class virtualMachine:
                     value = self.mainMemory.get_value(virtual_address)
                     self.mainMemory.set_value(quadList[index][3], value)
 
+            # LENGTH operation
+            elif quadList[index][0] == "LENGTH":
+                if self.have_global_definitions_been_processed:
+                    self.executionBlock.set_value(quadList[index][3], quadList[index][1])
+                else:
+                    self.mainMemory.set_value(quadList[index][3], quadList[index][1])
+
             # EXEC operation
             elif quadList[index][0] == "EXEC":
                 self.have_predefined_solutions_been_used = True

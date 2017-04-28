@@ -811,45 +811,89 @@ def p_get_var_type(p):
 
 def p_o(p):
     '''
-    O : L_BRACK id_ref_check_type_correspondence S_EXPRESSION check_int_type R_BRACK
-    | empty check_for_list_reference
+    O : L_BRACK id_ref_check_type_correspondence S_EXPRESSION check_int_type R_BRACK process_list_reference
+    | POINT id_ref_check_type_correspondence LENGTH L_PAREN R_PAREN process_list_length_reference
+    | POINT id_ref_check_type_correspondence APPEND L_PAREN S_EXPRESSION R_PAREN
+    | POINT id_ref_check_type_correspondence POP L_PAREN S_EXPRESSION R_PAREN
+    | empty check_for_list_reference process_var_reference
+    '''
+
+def p_process_list_length_reference(p):
+    '''
+     process_list_length_reference :
+    '''
+    global currentVar_IDREF
+    global currentSol
+    global programID
+    global is_id_ref_global
+
+    if is_id_ref_global:
+        list_length = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_length()
+    else:
+        list_length = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_length()
+
+    if currentSol == programID:
+        virtual_address = mainMemory.availTemporal(0)
+    else:
+        virtual_address = executionBlock.availTemporal(0)
+    if virtual_address is None:
+        p_error_exceeded_memory_capability(p)
+
+    quadQueue.add('LENGTH', list_length, None, virtual_address)
+
+    POperands.append(virtual_address)
+    PTypes.append(0)
+    numTempVarsDefined[0] = numTempVarsDefined[0] + 1
+
+def p_process_var_reference(p):
+    '''
+    process_var_reference :
     '''
     global currentVar_IDREF
     global currentType_IDREF
     global currentSol
     global programID
     global is_id_ref_global
-    if currentType_IDREF == 5:
-        indexer = POperands.pop()
-        PTypes.pop()
-        if is_id_ref_global:
-            list_length = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_length()
-            list_base_virtual_address = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_base_virtual_address()
-            list_type = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_type()
-        else:
-            list_length = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_length()
-            list_base_virtual_address = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_base_virtual_address()
-            list_type = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_type()
-        quadQueue.add('VERIFY', indexer, 0, list_length)
 
-        if currentSol == programID:
-            virtual_address = mainMemory.availTemporal(list_type)
-        else:
-            virtual_address = executionBlock.availTemporal(list_type)
-        if virtual_address is None:
-            p_error_exceeded_memory_capability(p)
-        quadQueue.add('LOCATE', list_base_virtual_address, indexer, virtual_address)
-
-        POperands.append(virtual_address)
-        PTypes.append(list_type)
-        numTempVarsDefined[list_type] = numTempVarsDefined[list_type] + 1
+    if is_id_ref_global:
+        virtual_address = funDir.search(programID)[2].search(currentVar_IDREF)[1]
     else:
-        if is_id_ref_global:
-            virtual_address = funDir.search(programID)[2].search(currentVar_IDREF)[1]
-        else:
-            virtual_address = funDir.search(currentSol)[2].search(currentVar_IDREF)[1]
-        POperands.append(virtual_address)
-        PTypes.append(currentType_IDREF)
+        virtual_address = funDir.search(currentSol)[2].search(currentVar_IDREF)[1]
+    POperands.append(virtual_address)
+    PTypes.append(currentType_IDREF)
+
+def p_process_list_reference(p):
+    '''
+    process_list_reference :
+    '''
+    global currentVar_IDREF
+    global currentSol
+    global programID
+    global is_id_ref_global
+
+    indexer = POperands.pop()
+    PTypes.pop()
+    if is_id_ref_global:
+        list_length = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_length()
+        list_base_virtual_address = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_base_virtual_address()
+        list_type = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_type()
+    else:
+        list_length = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_length()
+        list_base_virtual_address = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_base_virtual_address()
+        list_type = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_type()
+    quadQueue.add('VERIFY', indexer, 0, list_length)
+
+    if currentSol == programID:
+        virtual_address = mainMemory.availTemporal(list_type)
+    else:
+        virtual_address = executionBlock.availTemporal(list_type)
+    if virtual_address is None:
+        p_error_exceeded_memory_capability(p)
+    quadQueue.add('LOCATE', list_base_virtual_address, indexer, virtual_address)
+
+    POperands.append(virtual_address)
+    PTypes.append(list_type)
+    numTempVarsDefined[list_type] = numTempVarsDefined[list_type] + 1
 
 def p_check_for_list_reference(p):
     '''
