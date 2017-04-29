@@ -93,6 +93,11 @@ class executionBlock:
         else:
             return None
 
+    # Delete method
+    def delete(self, virtual_address):
+        if virtual_address >= self.localMIN and virtual_address <= self.localMIN:
+            return self.local.delete(virtual_address - self.localMIN)
+
     # AVAIL for parameters method
     def availParameters(self, type):
         virtual_address = self.parameters.avail(type)

@@ -512,6 +512,34 @@ class virtualMachine:
                 else:
                     self.mainMemory.set_value(quadList[index][3], quadList[index][1])
 
+            # POP operation
+            elif quadList[index][0] == "POP":
+                length = quadList[index][2]
+                current_virtual_address = None
+                next_virtual_address = quadList[index][1]
+                if self.have_global_definitions_been_processed:
+                    if self.is_virtual_address_global(quadList[index][1]):
+                        for counter in range(0, length - 1):
+                            current_virtual_address = next_virtual_address
+                            next_virtual_address = self.mainMemory.get_next(next_virtual_address)
+                        value = self.mainMemory.delete(next_virtual_address)
+                        self.mainMemory.set_next(current_virtual_address, None)
+                        self.executionBlock.set_value(quadList[index][3], value)
+                    else:
+                        for counter in range(0, length - 1):
+                            current_virtual_address = next_virtual_address
+                            next_virtual_address = self.executionBlock.get_next(next_virtual_address)
+                        value = self.executionBlock.delete(next_virtual_address)
+                        self.executionBlock.set_next(current_virtual_address, None)
+                        self.executionBlock.set_value(quadList[index][3], value)
+                else:
+                    for counter in range(0, length - 1):
+                        current_virtual_address = next_virtual_address
+                        next_virtual_address = self.mainMemory.get_next(next_virtual_address)
+                    value = self.mainMemory.delete(next_virtual_address)
+                    self.mainMemory.set_next(current_virtual_address, None)
+                    self.mainMemory.set_value(quadList[index][3], value)
+
             # EXEC operation
             elif quadList[index][0] == "EXEC":
                 self.have_predefined_solutions_been_used = True

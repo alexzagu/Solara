@@ -179,6 +179,36 @@ class memoryBlock:
         else:
             return None
 
+    # Delete method
+    def delete(self, virtual_address):
+        if virtual_address >= self.intMIN and virtual_address <= self.intMAX:
+            value = self.memBlock[0][virtual_address].get_value()
+            #del self.memBlock[0][virtual_address]
+            return value
+
+        elif virtual_address >= self.floatMIN and virtual_address <= self.floatMAX:
+            value = self.memBlock[1][virtual_address - self.floatMIN].get_value()
+            #del self.memBlock[1][virtual_address - self.floatMIN]
+            return value
+
+        elif virtual_address >= self.stringMIN and virtual_address <= self.stringMAX:
+            value = self.memBlock[2][virtual_address - self.stringMIN].get_value()
+            #del self.memBlock[2][virtual_address - self.stringMIN]
+            return value
+
+        elif virtual_address >= self.charMIN and virtual_address <= self.charMAX:
+            value = self.memBlock[3][virtual_address - self.charMIN].get_value()
+            #del self.memBlock[3][virtual_address - self.charMIN]
+            return value
+
+        elif virtual_address >= self.boolMIN and virtual_address <= self.boolMAX:
+            value = self.memBlock[4][virtual_address - self.boolMIN].get_value()
+            #del self.memBlock[4][virtual_address - self.boolMIN]
+            return value
+
+        else:
+            return None
+
     # AVAIL method
     def avail(self, type):
         if type == 0 and self.countInt <= self.intMAX:

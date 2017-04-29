@@ -559,8 +559,6 @@ def p_process_possible_plus_minus_operation(p):
     if len(POperators) > 0:
         operator = POperators[len(POperators) - 1]
         if operator == '+' or operator == '-':
-            if operator == '+':
-                print('add')
             right_operand = POperands.pop()
             right_type = PTypes.pop()
             left_operand = POperands.pop()
@@ -813,10 +811,63 @@ def p_o(p):
     '''
     O : L_BRACK id_ref_check_type_correspondence S_EXPRESSION check_int_type R_BRACK process_list_reference
     | POINT id_ref_check_type_correspondence LENGTH L_PAREN R_PAREN process_list_length_reference
-    | POINT id_ref_check_type_correspondence APPEND L_PAREN S_EXPRESSION R_PAREN
-    | POINT id_ref_check_type_correspondence POP L_PAREN S_EXPRESSION R_PAREN
+    | POINT id_ref_check_type_correspondence APPEND L_PAREN S_EXPRESSION check_list_append_exp_type R_PAREN process_list_append_reference
+    | POINT id_ref_check_type_correspondence POP L_PAREN R_PAREN process_list_pop_reference
     | empty check_for_list_reference process_var_reference
     '''
+
+def p_check_list_append_exp_type(p):
+    '''
+    check_list_append_exp_type :
+    '''
+    global currentType_IDREF
+    exp_type = PTypes[len(PTypes) - 1]
+    if exp_type != currentType_IDREF:
+        p_error_type_mismatch(p)
+
+def p_process_list_append_reference(p):
+    '''
+    process_list_append_reference :
+    '''
+    global currentVar_IDREF
+    global currentSol
+    global programID
+    global is_id_ref_global
+
+
+
+def p_process_list_pop_reference(p):
+    '''
+    process_list_pop_reference :
+    '''
+    global currentVar_IDREF
+    global currentSol
+    global programID
+    global is_id_ref_global
+
+    if is_id_ref_global:
+        list_length = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_length()
+        funDir.search(programID)[2].search(currentVar_IDREF)[1].set_length(list_length - 1)
+        list_base_virtual_address = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_base_virtual_address()
+        list_type = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_type()
+    else:
+        list_length = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_length()
+        funDir.search(currentSol)[2].search(currentVar_IDREF)[1].set_length(list_length - 1)
+        list_base_virtual_address = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_base_virtual_address()
+        list_type = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_type()
+
+    if currentSol == programID:
+        virtual_address = mainMemory.availTemporal(list_type)
+    else:
+        virtual_address = executionBlock.availTemporal(list_type)
+    if virtual_address is None:
+        p_error_exceeded_memory_capability(p)
+
+    quadQueue.add('POP', list_base_virtual_address, list_length, virtual_address)
+
+    POperands.append(virtual_address)
+    PTypes.append(list_type)
+    numTempVarsDefined[list_type] = numTempVarsDefined[list_type] + 1
 
 def p_process_list_length_reference(p):
     '''
