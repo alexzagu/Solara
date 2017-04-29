@@ -31,6 +31,7 @@ tokens = (
     'R_BRACK',
     'COLON',
     'COMMA',
+    'POINT',
     'PLUS',
     'MINUS',
     'MULTIPLY',
@@ -67,7 +68,10 @@ tokens = (
     'VARS',
     'SOL',
     'MAIN_R',
-    'RETURN'
+    'RETURN',
+    'LENGTH',
+    'APPEND',
+    'POP'
 )
 
 # Regular Expressions.
@@ -90,6 +94,7 @@ t_L_BRACK               = r'\['
 t_R_BRACK               = r'\]'
 t_COLON                 = r'\:'
 t_COMMA                 = r'\,'
+t_POINT                 = r'\.'
 t_PLUS                  = r'\+'
 t_MINUS                 = r'\-'
 t_MULTIPLY              = r'\*'
@@ -137,7 +142,10 @@ reserved = {
     'moveRight'     :'MOVE_RIGHT_R',
     'moveLeft'      :'MOVE_LEFT_R',
     'main'          :'MAIN_R',
-    'return'        :'RETURN'
+    'return'        :'RETURN',
+    'length'        :'LENGTH',
+    'append'        :'APPEND',
+    'pop'           :'POP'
 }
 
 t_ignore            = ' \t\r'

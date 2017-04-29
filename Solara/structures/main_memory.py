@@ -93,6 +93,11 @@ class mainMemory:
         else:
             return None
 
+    # Delete method
+    def delete(self, virtual_address):
+        if virtual_address >= self.globalMIN and virtual_address <= self.globalMAX:
+            return self.globals.delete(virtual_address - self.globalMIN)
+
     # AVAIL for globals method
     def availGlobals(self, type):
         virtual_address = self.globals.avail(type)
