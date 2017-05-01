@@ -83,3 +83,7 @@ class functionDirectory:
     # Method to include the global return variables from each solution to the list of global variables defined
     def add_global_return_var(self, name, type):
         self.functionDic[name][4][type] = self.functionDic[name][4][type] + 1
+
+    # Method to update the list of number of global variables defined of each data type. Update specific type count
+    def update_number_of_global_type(self, name, type):
+        self.functionDic[name][4][type] = self.functionDic[name][4][type] + 1

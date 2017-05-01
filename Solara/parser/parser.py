@@ -20,7 +20,9 @@ from structures.virtual_machine import virtualMachine
 from structures.main_memory import mainMemory
 from structures.execution_block import executionBlock
 from structures.list_information import listInformation
+from structures.id_ref_information import idRefInformation
 import re
+from tkinter import *
 #-------------------------------------------------------------
 funDir = functionDirectory()
 semCube = semanticCube()
@@ -30,9 +32,6 @@ currentSymTab = None # Actual object of the current symbol table
 currentVar = None # Variable that's being processed at the moment
 currentSol = None # Solution that's being processed at the moment
 solHasReturn = False # Boolean that specifies if solution has at least one return statement
-is_id_ref_global = False # Boolean that specifies if ID_REF is local or global
-currentVar_IDREF = None # Variable that's being processed at the moment in ID_REF
-currentType_IDREF = None # Code signing of the type of the current variable for ID_REF (currentVar_IDREF)
 programID = None # Name of the main solution (program's name)
 POperators = [] # Stack of pending operators to process
 POperands = [] # Stack of pending operands to process
@@ -54,7 +53,31 @@ currentListLength = 0 # Length of the list that's currently being processed.
 currentListBaseVirtualAddress = None # Base virtual address of the list that's currently being processed.
 listVirtualAddressToModify = None # The list element that needs to be modified in order to link the list elements.
 potentialNextListVirtualAddress = None # Potential next virtual address from a list.
+id_references = [] # Stack of id refs that are being processed
+current_id_ref = None # Id ref that's being processed at the moment
+terminal = Tk()
+terminalCount = 0
+top_frame_terminal = Frame(terminal)
+bottom_frame_terminal = Frame(terminal)
 #-------------------------------------------------------------
+
+def ide_setup():
+    screen_width = terminal.winfo_screenwidth()
+    screen_height = terminal.winfo_screenheight()
+    terminal.configure(bg="#363835")
+    terminal.geometry(
+        '%dx%d+%d+%d' % (screen_width / 2, screen_height / 2 - 80, screen_width / 2, screen_height / 2))
+
+    top_frame_terminal.pack()
+    bottom_frame_terminal.pack(side=BOTTOM)
+    bottom_frame_terminal.configure(bg="#363835")
+
+def terminal_print(strprint):
+    label = Label(bottom_frame_terminal, text=strprint, anchor='w')
+    label.grid(sticky=E)
+    label.configure(bg="#363835")
+    label.configure(fg="white")
+    label.pack()
 
 def p_program(p):
     '''
@@ -186,7 +209,7 @@ def p_check_for_list_type_specification(p):
     '''
     global currentType
     if currentType == 5:
-        error_missing_list_type_specification(p)
+        p_error_missing_list_type_specification(p)
 
 def p_list_type(p):
     '''
@@ -257,7 +280,7 @@ def p_check_for_list_assignation(p):
     '''
     global currentType
     if currentType == 5:
-        error_missing_list_assignation(p)
+        p_error_missing_list_assignation(p)
 
 def p_append_left_operand(p):
     '''
@@ -281,7 +304,7 @@ def p_check_for_list_definition(p):
     '''
     global currentType
     if currentType == 5:
-        error_incorrect_list_definition(p)
+        p_error_incorrect_list_definition(p)
 
 def p_d(p):
     '''
@@ -789,72 +812,135 @@ def p_check_var_existence(p):
     '''
     check_var_existence :
     '''
+    global current_id_ref
     if currentSymTab.search(p[-1]) is None and funDir.search(programID)[2].search(p[-1]) is None:
         p_error_undefined_var(p[-1])
-    global currentVar_IDREF
-    currentVar_IDREF = p[-1]
+    current_id_ref = idRefInformation()
+    current_id_ref.set_name(p[-1])
+    id_references.append(current_id_ref)
 
 def p_get_var_type(p):
     '''
     get_var_type :
     '''
-    global is_id_ref_global
-    global currentType_IDREF
+    global current_id_ref
     if currentSymTab.search(p[-2]) is None:
-        currentType_IDREF = funDir.search(programID)[2].search(p[-2])[0]
-        is_id_ref_global = True
+        current_id_ref.set_type(funDir.search(programID)[2].search(p[-2])[0])
+        current_id_ref.set_is_global(True)
     else:
-        currentType_IDREF = currentSymTab.search(p[-2])[0]
-        is_id_ref_global = False
+        current_id_ref.set_type(currentSymTab.search(p[-2])[0])
+        current_id_ref.set_is_global(False)
 
 def p_o(p):
     '''
     O : L_BRACK id_ref_check_type_correspondence S_EXPRESSION check_int_type R_BRACK process_list_reference
     | POINT id_ref_check_type_correspondence LENGTH L_PAREN R_PAREN process_list_length_reference
-    | POINT id_ref_check_type_correspondence APPEND L_PAREN S_EXPRESSION check_list_append_exp_type R_PAREN process_list_append_reference
+    | POINT id_ref_check_type_correspondence APPEND L_PAREN S_EXPRESSION check_list_append_exp_type R_PAREN process_list_append_reference process_append_assignation_operation
     | POINT id_ref_check_type_correspondence POP L_PAREN R_PAREN process_list_pop_reference
     | empty check_for_list_reference process_var_reference
     '''
+    global id_references
+    global current_id_ref
+    id_references.pop()
+    if len(id_references) > 0:
+        current_id_ref = id_references[len(id_references) - 1]
+
+def p_process_append_assignation_operation(p):
+    '''
+    process_append_assignation_operation :
+    '''
+    if len(POperators) > 0:
+        operator = POperators[len(POperators) - 1]
+        if operator == '=':
+            left_operand = POperands.pop()
+            left_type = PTypes.pop()
+            right_operand = POperands.pop()
+            right_type = PTypes.pop()
+            operator = POperators.pop()
+            result_type = semCube.search((left_type, operator, right_type))
+
+            if not result_type is None:
+                quadQueue.add(operator, right_operand, None, left_operand)
+            else:
+                print(str(left_type) + ', ' + operator + ', ' + str(right_type))
+                p_error_type_mismatch(p)
 
 def p_check_list_append_exp_type(p):
     '''
     check_list_append_exp_type :
     '''
-    global currentType_IDREF
+    global current_id_ref
+    global currentSol
+    global programID
+
     exp_type = PTypes[len(PTypes) - 1]
-    if exp_type != currentType_IDREF:
+    if current_id_ref.get_is_global():
+        list_type = funDir.search(programID)[2].search(current_id_ref.get_name())[1].get_type()
+    else:
+        list_type = funDir.search(currentSol)[2].search(current_id_ref.get_name())[1].get_type()
+    if exp_type != list_type:
         p_error_type_mismatch(p)
 
 def p_process_list_append_reference(p):
     '''
     process_list_append_reference :
     '''
-    global currentVar_IDREF
+    global current_id_ref
     global currentSol
     global programID
-    global is_id_ref_global
 
+    if current_id_ref.get_is_global():
+        list_length = funDir.search(programID)[2].search(current_id_ref.get_name())[1].get_length()
+        funDir.search(programID)[2].search(current_id_ref.get_name())[1].set_length(list_length + 1)
+        list_base_virtual_address = funDir.search(programID)[2].search(current_id_ref.get_name())[1].get_base_virtual_address()
+        list_type = funDir.search(programID)[2].search(current_id_ref.get_name())[1].get_type()
+        virtual_address = mainMemory.availGlobals(list_type)
+        funDir.update_number_of_global_type(programID, list_type)
+        if list_length == 0:
+            funDir.search(programID)[2].search(current_id_ref.get_name())[1].set_base_virtual_address(virtual_address)
+    else:
+        list_length = funDir.search(currentSol)[2].search(current_id_ref.get_name())[1].get_length()
+        funDir.search(currentSol)[2].search(current_id_ref.get_name())[1].set_length(list_length + 1)
+        list_base_virtual_address = funDir.search(currentSol)[2].search(current_id_ref.get_name())[1].get_base_virtual_address()
+        list_type = funDir.search(currentSol)[2].search(current_id_ref.get_name())[1].get_type()
+        virtual_address = executionBlock.availLocal(list_type)
+        numLocalVarsDefined[list_type] = numLocalVarsDefined[list_type] + 1
+        if list_length == 0:
+            funDir.search(currentSol)[2].search(current_id_ref.get_name())[1].set_base_virtual_address(virtual_address)
 
+    if virtual_address is None:
+        p_error_exceeded_memory_capability(p)
+
+    quadQueue.add('APPEND', list_base_virtual_address, list_length, virtual_address)
+    POperators.append('=')
+    POperands.append(virtual_address)
+    PTypes.append(list_type)
 
 def p_process_list_pop_reference(p):
     '''
     process_list_pop_reference :
     '''
-    global currentVar_IDREF
+    global current_id_ref
     global currentSol
     global programID
-    global is_id_ref_global
 
-    if is_id_ref_global:
-        list_length = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_length()
-        funDir.search(programID)[2].search(currentVar_IDREF)[1].set_length(list_length - 1)
-        list_base_virtual_address = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_base_virtual_address()
-        list_type = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_type()
+    if current_id_ref.get_is_global():
+        list_length = funDir.search(programID)[2].search(current_id_ref.get_name())[1].get_length()
+        funDir.search(programID)[2].search(current_id_ref.get_name())[1].set_length(list_length - 1)
+        list_base_virtual_address = funDir.search(programID)[2].search(current_id_ref.get_name())[1].get_base_virtual_address()
+        if list_length == 1:
+            funDir.search(programID)[2].search(current_id_ref.get_name())[1].set_base_virtual_address(None)
+        list_type = funDir.search(programID)[2].search(current_id_ref.get_name())[1].get_type()
     else:
-        list_length = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_length()
-        funDir.search(currentSol)[2].search(currentVar_IDREF)[1].set_length(list_length - 1)
-        list_base_virtual_address = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_base_virtual_address()
-        list_type = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_type()
+        list_length = funDir.search(currentSol)[2].search(current_id_ref.get_name())[1].get_length()
+        funDir.search(currentSol)[2].search(current_id_ref.get_name())[1].set_length(list_length - 1)
+        list_base_virtual_address = funDir.search(currentSol)[2].search(current_id_ref.get_name())[1].get_base_virtual_address()
+        if list_length == 1:
+            funDir.search(currentSol)[2].search(current_id_ref.get_name())[1].set_base_virtual_address(None)
+        list_type = funDir.search(currentSol)[2].search(current_id_ref.get_name())[1].get_type()
+
+    if list_length == 0:
+        p_error_nothing_to_pop(p)
 
     if currentSol == programID:
         virtual_address = mainMemory.availTemporal(list_type)
@@ -873,15 +959,14 @@ def p_process_list_length_reference(p):
     '''
      process_list_length_reference :
     '''
-    global currentVar_IDREF
+    global current_id_ref
     global currentSol
     global programID
-    global is_id_ref_global
 
-    if is_id_ref_global:
-        list_length = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_length()
+    if current_id_ref.get_is_global():
+        list_length = funDir.search(programID)[2].search(current_id_ref.get_name())[1].get_length()
     else:
-        list_length = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_length()
+        list_length = funDir.search(currentSol)[2].search(current_id_ref.get_name())[1].get_length()
 
     if currentSol == programID:
         virtual_address = mainMemory.availTemporal(0)
@@ -900,38 +985,35 @@ def p_process_var_reference(p):
     '''
     process_var_reference :
     '''
-    global currentVar_IDREF
-    global currentType_IDREF
+    global current_id_ref
     global currentSol
     global programID
-    global is_id_ref_global
 
-    if is_id_ref_global:
-        virtual_address = funDir.search(programID)[2].search(currentVar_IDREF)[1]
+    if current_id_ref.get_is_global():
+        virtual_address = funDir.search(programID)[2].search(current_id_ref.get_name())[1]
     else:
-        virtual_address = funDir.search(currentSol)[2].search(currentVar_IDREF)[1]
+        virtual_address = funDir.search(currentSol)[2].search(current_id_ref.get_name())[1]
     POperands.append(virtual_address)
-    PTypes.append(currentType_IDREF)
+    PTypes.append(current_id_ref.get_type())
 
 def p_process_list_reference(p):
     '''
     process_list_reference :
     '''
-    global currentVar_IDREF
+    global current_id_ref
     global currentSol
     global programID
-    global is_id_ref_global
 
     indexer = POperands.pop()
     PTypes.pop()
-    if is_id_ref_global:
-        list_length = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_length()
-        list_base_virtual_address = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_base_virtual_address()
-        list_type = funDir.search(programID)[2].search(currentVar_IDREF)[1].get_type()
+    if current_id_ref.get_is_global():
+        list_length = funDir.search(programID)[2].search(current_id_ref.get_name())[1].get_length()
+        list_base_virtual_address = funDir.search(programID)[2].search(current_id_ref.get_name())[1].get_base_virtual_address()
+        list_type = funDir.search(programID)[2].search(current_id_ref.get_name())[1].get_type()
     else:
-        list_length = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_length()
-        list_base_virtual_address = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_base_virtual_address()
-        list_type = funDir.search(currentSol)[2].search(currentVar_IDREF)[1].get_type()
+        list_length = funDir.search(currentSol)[2].search(current_id_ref.get_name())[1].get_length()
+        list_base_virtual_address = funDir.search(currentSol)[2].search(current_id_ref.get_name())[1].get_base_virtual_address()
+        list_type = funDir.search(currentSol)[2].search(current_id_ref.get_name())[1].get_type()
     quadQueue.add('VERIFY', indexer, 0, list_length)
 
     if currentSol == programID:
@@ -950,16 +1032,16 @@ def p_check_for_list_reference(p):
     '''
     check_for_list_reference :
     '''
-    global currentType_IDREF
-    if currentType_IDREF == 5:
-        error_incorrect_list_reference(p)
+    global current_id_ref
+    if current_id_ref.get_type() == 5:
+        p_error_incorrect_list_reference(p)
 
 def p_id_ref_check_type_correspondence(p):
     '''
     id_ref_check_type_correspondence :
     '''
-    global currentType_IDREF
-    if currentType_IDREF != 5:
+    global current_id_ref
+    if current_id_ref.get_type() != 5:
         p_error_type_mismatch(p)
 
 def p_check_int_type(p):
@@ -1658,6 +1740,9 @@ def p_error(p):
     print(p.value)
     print(p.type)
     print(p.lineno)
+    ide_setup()
+    terminal_print('Error de sintaxis!')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for duplicate variables
@@ -1666,6 +1751,9 @@ def p_error_duplicate_var(p):
     '''
     print('Error!')
     print('Variable ' + p + ' already defined.')
+    ide_setup()
+    terminal_print('Error!\n' + 'Variable ' + p + ' already defined.')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for duplicate parameters
@@ -1674,6 +1762,9 @@ def p_error_duplicate_param(p):
     '''
     print('Error!')
     print('Parameter ' + p + ' already defined.')
+    ide_setup()
+    terminal_print('Error!\n' + 'Parameter ' + p + ' already defined.')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for duplicate solutions
@@ -1682,6 +1773,9 @@ def p_error_duplicate_sol(p):
     '''
     print('Error!')
     print('Solution ' + p + ' already defined.')
+    ide_setup()
+    terminal_print('Error!\n' + 'Solution ' + p + ' already defined.')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for undefined variables
@@ -1690,6 +1784,9 @@ def p_error_undefined_var(p):
     '''
     print('Error!')
     print('Variable ' + p + ' is not defined.')
+    ide_setup()
+    terminal_print('Error!\n' + 'Variable ' + p + ' is not defined.')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for noninteger indexing
@@ -1698,6 +1795,9 @@ def p_error_noninteger_indexing(p):
     '''
     print('Error!')
     print('Trying to index a list using a non-integer value.')
+    ide_setup()
+    terminal_print('Error!\n' + 'Trying to index a list using a non-integer value.')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for undefined solutions
@@ -1706,6 +1806,9 @@ def p_error_undefined_sol(p):
     '''
     print('Error!')
     print('Solution ' + p + ' is not defined.')
+    ide_setup()
+    terminal_print('Error!\n' + 'Solution ' + p + ' is not defined.')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for when main solution is called
@@ -1714,6 +1817,9 @@ def p_error_main_not_callable(p):
     '''
     print('Error!')
     print('Main solution is not a callable solution.')
+    ide_setup()
+    terminal_print('Error!\n' + 'Main solution is not a callable solution.')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for unidentified constants
@@ -1722,6 +1828,9 @@ def p_error_unidentified_constant(p):
     '''
     print('Error!')
     print('Constant ' + p + ' is not identified.')
+    ide_setup()
+    terminal_print('Error!\n' + 'Constant ' + p + ' is not identified.')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for type mismatch
@@ -1730,6 +1839,9 @@ def p_error_type_mismatch(p):
     '''
     print('Error!')
     print('Type mismatch!')
+    ide_setup()
+    terminal_print('Error!\n' + 'Type mismatch!')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for condition type mismatch
@@ -1738,6 +1850,9 @@ def p_error_condition_type_mismatch(p):
     '''
     print('Error!')
     print('Condition type mismatch!')
+    ide_setup()
+    terminal_print('Error!\n' + 'Condition type mismatch!')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for return type mismatch
@@ -1746,6 +1861,9 @@ def p_error_return_type_mismatch(p):
     '''
     print('Error!')
     print('Return type mismatch!')
+    ide_setup()
+    terminal_print('Error!\n' + 'Return type mismatch!')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for argument type mismatch
@@ -1754,6 +1872,9 @@ def p_error_argument_type_mismatch(p):
     '''
     print('Error!')
     print('Argument type mismatch!')
+    ide_setup()
+    terminal_print('Error!\n' + 'Argument type mismatch!')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for more parameters than expected in solution call
@@ -1762,6 +1883,9 @@ def p_error_more_parameters_than_expected(p):
     '''
     print('Error!')
     print('More parameters than expected in solution call!')
+    ide_setup()
+    terminal_print('Error!\n' + 'More parameters than expected in solution call!')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for less parameters than expected in solution call
@@ -1770,6 +1894,9 @@ def p_error_less_parameters_than_expected(p):
     '''
     print('Error!')
     print('Less parameters than expected in solution call!')
+    ide_setup()
+    terminal_print('Error!\n' + 'Less parameters than expected in solution call!')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for exceeded memory capability
@@ -1778,6 +1905,9 @@ def p_error_exceeded_memory_capability(p):
     '''
     print('Error!')
     print('Exceeded memory capability!')
+    ide_setup()
+    terminal_print('Error!\n' + 'Exceeded memory capability!')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for no return statement in solution definition
@@ -1786,38 +1916,64 @@ def p_error_no_return_statement_found(p):
     '''
     print('Error!')
     print('No return statement found in solution definition!')
+    ide_setup()
+    terminal_print('Error!\n' + 'No return statement found in solution definition!')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for missing list type specification
-def error_missing_list_type_specification(p):
+def p_error_missing_list_type_specification(p):
     '''
     '''
     print('Error!')
     print('Missing list type specification!')
+    ide_setup()
+    terminal_print('Error!\n' + 'Missing list type specification!')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for missing list assignation
-def error_missing_list_assignation(p):
+def p_error_missing_list_assignation(p):
     '''
     '''
     print('Error!')
     print('Missing list assignation!')
+    ide_setup()
+    terminal_print('Error!\n' + 'Missing list assignation!')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for incorrect list definition
-def error_incorrect_list_definition(p):
+def p_error_incorrect_list_definition(p):
     '''
     '''
     print('Error!')
     print('Incorrect list definition!')
+    ide_setup()
+    terminal_print('Error!\n' + 'Incorrect list definition!')
+    terminal.mainloop()
     sys.exit()
 
 # Error-handling function for incorrect list reference
-def error_incorrect_list_reference(p):
+def p_error_incorrect_list_reference(p):
     '''
     '''
     print('Error!')
     print('Incorrect list reference!')
+    ide_setup()
+    terminal_print('Error!\n' + 'Incorrect list reference!')
+    terminal.mainloop()
+    sys.exit()
+
+# Error-handling function for attempting to pop an emtpy list
+def p_error_nothing_to_pop(p):
+    '''
+    '''
+    print('Error!')
+    print('Nothing to pop! List is already empty.')
+    ide_setup()
+    terminal_print('Error!\n' + 'Nothing to pop! List is already empty.')
+    terminal.mainloop()
     sys.exit()
 
 # se contruye el parser
