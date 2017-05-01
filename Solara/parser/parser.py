@@ -55,13 +55,18 @@ listVirtualAddressToModify = None # The list element that needs to be modified i
 potentialNextListVirtualAddress = None # Potential next virtual address from a list.
 id_references = [] # Stack of id refs that are being processed
 current_id_ref = None # Id ref that's being processed at the moment
-terminal = Tk()
-terminalCount = 0
-top_frame_terminal = Frame(terminal)
-bottom_frame_terminal = Frame(terminal)
+terminal = None
+top_frame_terminal = None
+bottom_frame_terminal = None
 #-------------------------------------------------------------
 
 def ide_setup():
+    global terminal
+    global top_frame_terminal
+    global bottom_frame_terminal
+    terminal = Tk()
+    top_frame_terminal = Frame(terminal)
+    bottom_frame_terminal = Frame(terminal)
     screen_width = terminal.winfo_screenwidth()
     screen_height = terminal.winfo_screenheight()
     terminal.configure(bg="#363835")
@@ -1024,7 +1029,7 @@ def p_process_list_reference(p):
         p_error_exceeded_memory_capability(p)
     quadQueue.add('LOCATE', list_base_virtual_address, indexer, virtual_address)
 
-    POperands.append(virtual_address)
+    POperands.append([virtual_address])
     PTypes.append(list_type)
     numTempVarsDefined[list_type] = numTempVarsDefined[list_type] + 1
 
