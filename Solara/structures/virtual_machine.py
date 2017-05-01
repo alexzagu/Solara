@@ -17,15 +17,14 @@ class virtualMachine:
         self.mainMemory = mainMemory
         self.funDir = funDir
         self.mainMemory.malloc(self.funDir.search(programID)[4], self.funDir.search(programID)[5])
-        print(self.mainMemory)
         self.pen = self.turtle_setup()
         self.terminal = Tk()
         self.terminalCount = 0
         self.top_frame_terminal = Frame(self.terminal)
         self.bottom_frame_terminal = Frame(self.terminal)
         print(quadQueue)
-        self.execute(quadQueue.quadList)
         self.ide_setup()
+        self.execute(quadQueue.quadList)
         if self.have_predefined_solutions_been_used:
             self.pen.getscreen()._root.mainloop()
 
@@ -377,10 +376,16 @@ class virtualMachine:
                 if self.have_global_definitions_been_processed:
                     if self.is_virtual_address_global(quadList[index][1]):
                         value = self.mainMemory.get_value(quadList[index][1])
-                        self.executionBlock.set_value(quadList[index][3], value)
+                        if self.is_virtual_address_global(quadList[index][3]):
+                            self.mainMemory.set_value(quadList[index][3], value)
+                        else:
+                            self.executionBlock.set_value(quadList[index][3], value)
                     else:
                         value = self.executionBlock.get_value(quadList[index][1])
-                        self.executionBlock.set_value(quadList[index][3], value)
+                        if self.is_virtual_address_global(quadList[index][3]):
+                            self.mainMemory.set_value(quadList[index][3], value)
+                        else:
+                            self.executionBlock.set_value(quadList[index][3], value)
                 else:
                     value = self.mainMemory.get_value(quadList[index][1])
                     self.mainMemory.set_value(quadList[index][3], value)
@@ -540,6 +545,21 @@ class virtualMachine:
                     self.mainMemory.set_next(current_virtual_address, None)
                     self.mainMemory.set_value(quadList[index][3], value)
 
+
+            # APPEND operation
+            elif quadList[index][0] == "APPEND":
+                if not quadList[index][1] is None:
+                    length = quadList[index][2]
+                    current_virtual_address = quadList[index][1]
+                    if self.is_virtual_address_global(current_virtual_address):
+                        for counter in range(0, length - 1):
+                            current_virtual_address = self.mainMemory.get_next(current_virtual_address)
+                        self.mainMemory.set_next(current_virtual_address, quadList[index][3])
+                    else:
+                        for counter in range(0, length - 1):
+                            current_virtual_address = self.executionBlock.get_next(current_virtual_address)
+                        self.executionBlock.set_next(current_virtual_address, quadList[index][3])
+
             # EXEC operation
             elif quadList[index][0] == "EXEC":
                 self.have_predefined_solutions_been_used = True
@@ -585,16 +605,22 @@ class virtualMachine:
 
             index += 1
 
+        print(self.mainMemory)
+
     # Error-handling functions for execution-time semantic analysis
 
     # Error-handling function for division by zero
     def error_division_by_zero(self):
         print('Error!')
         print('Division by 0 not possible!')
+        self.terminal_print('Error!\nDivision by 0 not possible!')
+        self.terminal.mainloop()
         sys.exit()
 
     # Error-handling function for index out of bounds
     def error_index_out_of_bounds(self):
         print('Error!')
         print('Index out of bounds!')
+        self.terminal_print('Error!\nIndex out of bounds!')
+        self.terminal.mainloop()
         sys.exit()
